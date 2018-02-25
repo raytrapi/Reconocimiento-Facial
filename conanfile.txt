@@ -1,0 +1,10 @@
+[requires]
+#Boost/1.64.0@conan/stable
+
+[options]
+#Boost:shared=True # False
+[imports]
+#bin, *filesystem* -> ./bin
+#bin, *system* -> ./bin
+[generators]
+cmake
