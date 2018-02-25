@@ -1,0 +1,28 @@
+
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
+
+
+list(APPEND VALIDOS "")
+if(RECORTADOR)
+	list(APPEND VALIDOS "recortador")
+endif()
+if(DETECTOPENCV)
+	list(APPEND VALIDOS "Deteccion-OPENCV")
+endif()
+SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
+FOREACH(codigo ${SUBDIRS})
+	list(FIND VALIDOS ${codigo} indice)
+	IF(${indice} GREATER -1)
+  		ADD_SUBDIRECTORY(${codigo})
+  	ENDIF()
+ENDFOREACH()
