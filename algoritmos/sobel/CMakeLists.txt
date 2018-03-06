@@ -16,6 +16,6 @@ endif()
 add_custom_command(
     TARGET sobel POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/../../bin/sobel.dll
+        ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/sobel.dll
         ${CMAKE_SOURCE_DIR}/dll
 )

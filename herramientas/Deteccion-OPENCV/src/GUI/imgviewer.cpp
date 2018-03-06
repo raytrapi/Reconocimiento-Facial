@@ -54,16 +54,14 @@ void ImgViewer::borrarMat(void *mat){
 }
 
 void ImgViewer::setImage(const QImage &img){
-    if (!image.isNull())
+    /*if (image.isNull()){
         qDebug() << "Vista sin imagen";
+        return;
+    }*/
     imageOriginal=img.copy(img.rect());
 
     qreal escalaTemporal=1;
-    zoom=1;
-    xDesplazado=0;
-    yDesplazado=0;
-    posXRaton=0;
-    posYRaton=0;
+
 	int w=this->width();
 	int h=this->height();
 	if(imageOriginal.size().width()>w){
@@ -88,11 +86,27 @@ void ImgViewer::setImage(const QImage &img){
     this->update();
 
 }
-
+void ImgViewer::setPreImageCV(const cv::Mat &img){
+	//cv::Mat m
+	zoom=1;
+	xDesplazado=0;
+	yDesplazado=0;
+	posXRaton=0;
+	posYRaton=0;
+	imagenCVOriginal=img.clone();
+	conImagen=true;
+	setImageCV(img);
+}
 void ImgViewer::setImageCV(const cv::Mat &img){
-	bool conRejilla=true;
-	bool conMasInfo=true;
-	bool conFiltro=true;
+	//img.copyTo();
+	//bool conRejilla=true;
+	//bool conMasInfo=true;
+	//bool conFiltro=true;
+	for(int i=0; i<imagenesResultados.size();i++){
+		delete imagenesResultados[i];
+	}
+	imagenesResultados.clear();
+	estaEjecutando=true;
 	qDebug()<<"**************************************";
 	qDebug()<<"    Comenzamos procesado de imagen    ";
 	qDebug()<<"**************************************";
@@ -100,10 +114,13 @@ void ImgViewer::setImageCV(const cv::Mat &img){
 	std::clock_t tiempoInicio = std::clock();
 	std::clock_t tiempoParcial=tiempoInicio;
 	std::clock_t tiempoFinal;
-    cv::Mat grey_image;
+
+
+    cv::Mat *grey_image=new cv::Mat(img.size(),img.type());
+    imagenesResultados.push_back(grey_image);
     qDebug()<<"Convertimos a gris";
-    cv::cvtColor(img, grey_image, CV_BGR2GRAY);
-    cv::equalizeHist(grey_image, grey_image);
+    cv::cvtColor(img, *grey_image, CV_BGR2GRAY);
+    cv::equalizeHist(*grey_image, *grey_image);
 
     tiempoFinal=std::clock();
     qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
@@ -119,7 +136,7 @@ void ImgViewer::setImageCV(const cv::Mat &img){
     int proporcion=100;
     qDebug()<<"Busco caras";
     tiempoParcial=std::clock();
-    faceCascade.detectMultiScale(grey_image, caras, 1.1, 3,  0|CV_HAAR_SCALE_IMAGE,
+    faceCascade.detectMultiScale(*grey_image, caras, 1.1, 3,  0|CV_HAAR_SCALE_IMAGE,
                                  cv::Size(img.cols/proporcion, img.rows/proporcion));/**/
 
     tiempoFinal=std::clock();
@@ -129,16 +146,22 @@ void ImgViewer::setImageCV(const cv::Mat &img){
 
     cv::Scalar colorCaraRejilla(128,128,128);
     cv::Scalar colorRejilla(128,128,128, 0.1);
+    cv::Mat *imgCVtemp;
     for( size_t i = 0; i < caras.size(); i++){
-    	cv::rectangle((cv::Mat)img, caras[i], colorCaraRejilla,1);
+
     	if(conRejilla){
-			//Representamos la rejilla de proporción
+    		imgCVtemp=new cv::Mat(img.size(),img.type());
+    		imagenesResultados.push_back(imgCVtemp);
+    		cv::rectangle((cv::Mat)(*imgCVtemp), caras[i], colorCaraRejilla,1);
+			//Representamos la rejilla de proporciï¿½n
 			cv::Point pEsquinaSuperior(caras[i].x,caras[i].y);
 			cv::Point pEsquinaInferior(caras[i].x+caras[i].width-1,caras[i].y+caras[i].height-1);
 			int aumento=caras[i].width/5;
 			int aumentoActual=0;
+			imgCVtemp=new cv::Mat(img.size(),img.type());
+			imagenesResultados.push_back(imgCVtemp);
 			for(int i=0;i<5;i++){
-				cv::line((cv::Mat)img,
+				cv::line((cv::Mat)(*imgCVtemp),
 						cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y),
 						cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y),
 						colorRejilla,1);
@@ -146,10 +169,11 @@ void ImgViewer::setImageCV(const cv::Mat &img){
 			}
 			aumento=caras[i].height/16;
 			aumentoActual=0;
+
 			for(int i=0;i<16;i++){
 				//cv::Point sup(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y);
 				//cv::Point inf(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y);
-				cv::line((cv::Mat)img,
+				cv::line((cv::Mat)(*imgCVtemp),
 						cv::Point(pEsquinaSuperior.x,pEsquinaSuperior.y+aumentoActual),
 						cv::Point(pEsquinaInferior.x,pEsquinaSuperior.y+aumentoActual),
 						colorRejilla,1);
@@ -166,41 +190,55 @@ void ImgViewer::setImageCV(const cv::Mat &img){
     caras.insert(caras.end(),carasEnPerfil.begin(),carasEnPerfil.end());/**/
 
     if(conMasInfo){
-		cv::Scalar colorCara(255,0,255);
-		cv::Scalar colorOjo(0, 255, 0);
-		cv::Scalar colorBoca(255,0, 0);
-		cv::Scalar colorNariz(0,0, 255);
+		cv::Scalar colorCara(255,0,255); // Azul + Rojo = Violeta
+		cv::Scalar colorOjo(0, 255, 0);  // Verde
+		cv::Scalar colorBoca(255,0, 0);  // Azul
+		cv::Scalar colorNariz(0,0, 255); // Rojo
 		int limiteCoincidenciaCara=3;
 		int coincidencias=6;
 		for( size_t i = 0; i < caras.size(); i++){
 			coincidencias=0;
 
-			cv::Mat faceROI=grey_image(caras[i]);
+			cv::Mat faceROI=(*grey_image)(caras[i]);
 			qDebug()<<"Busco Ojos";
 			tiempoParcial=std::clock();
-			eyeCascade.detectMultiScale(faceROI,ojos, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-										cv::Size(caras[i].width/5, caras[i].height/8));
+			/*eyeCascade.detectMultiScale(faceROI,ojos, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
+										cv::Size(caras[i].width/5, caras[i].height/8));/**/
+			int porcion=faceROI.rows/16;
+			int porcion4=porcion<<2;
+			qDebug()<<porcion;
+			qDebug()<<porcion4;
+			qDebug()<<(porcion4+(porcion<<1)+porcion);
+			qDebug()<<(porcion<<3);
+			cv::Mat zonaOjos(faceROI, cv::Rect(0, porcion4, faceROI.cols, porcion4+porcion) );
+			eyeCascade.detectMultiScale(zonaOjos,ojos, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
+													cv::Size(caras[i].width/5, caras[i].height/8));
 			tiempoFinal=std::clock();
 			qDebug()<<"Se han encontrado "<<ojos.size();
 			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
 
+			qDebug()<<"Busco narices";
+			//cv::Mat zonaNariz(faceROI, cv::Rect(0, porcion4+(porcion<<1)+porcion, faceROI.cols, porcion4) );
+			cv::Mat zonaNariz(faceROI, cv::Rect(0, porcion4<<1, faceROI.cols, porcion4) );
+			tiempoParcial=std::clock();
+			noseCascade.detectMultiScale(zonaNariz,narices, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
+										cv::Size(caras[i].width/5, caras[i].height/8));
+			tiempoFinal=std::clock();
+			qDebug()<<"Se han encontrado "<<narices.size();
+			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
 
 			qDebug()<<"Busco bocas";
+			//cv::Mat zonaBoca(faceROI, cv::Rect(0, porcion<<3, faceROI.cols, porcion4) );
+			cv::Mat zonaBoca(faceROI, cv::Rect(0, (porcion<<3)+(porcion<<1)+porcion, faceROI.cols, porcion4) );
 			tiempoParcial=std::clock();
-			mouthCascade.detectMultiScale(faceROI,bocas, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
+			mouthCascade.detectMultiScale(zonaBoca,bocas, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
 										cv::Size(caras[i].width*(3/5), caras[i].height/8));
 			tiempoFinal=std::clock();
 			qDebug()<<"Se han encontrado "<<bocas.size();
 			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
 
 
-			qDebug()<<"Busco narices";
-			tiempoParcial=std::clock();
-			noseCascade.detectMultiScale(faceROI,narices, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-										cv::Size(caras[i].width/5, caras[i].height/8));
-			tiempoFinal=std::clock();
-			qDebug()<<"Se han encontrado "<<narices.size();
-			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
+
 
 
 			if(ojos.size()>2){
@@ -222,26 +260,53 @@ void ImgViewer::setImageCV(const cv::Mat &img){
 			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoInicio) / CLOCKS_PER_SEC)<<"ms";
 			qDebug()<<"Se han encontrado "<<coincidencias<< " coincidencias.";
 			if(coincidencias>=limiteCoincidenciaCara || !conFiltro){
-				cv::rectangle((cv::Mat)img, caras[i], colorCara);
+				int porcion=caras[i].height/16;
+				int porcion4=porcion<<2;
+				imgCVtemp=new cv::Mat(img.size(),img.type());
+				imagenesResultados.push_back(imgCVtemp);
+
+				cv::rectangle((cv::Mat)(*imgCVtemp), caras[i], colorCara);
+
+				imgCVtemp=new cv::Mat(img.size(),img.type());
+				imagenesResultados.push_back(imgCVtemp);
+
 				for (size_t j = 0; j < ojos.size(); j++) {
-					cv::rectangle((cv::Mat)img(caras[i]), ojos[j], colorOjo);
+					cv::rectangle((*imgCVtemp),
+							cv::Rect(ojos[j].x+caras[i].x,(ojos[j].y+caras[i].y+porcion4),ojos[i].width,ojos[i].height),
+							colorOjo,3);
 				}
-				for (size_t j = 0; j < bocas.size(); j++) {
-					cv::rectangle((cv::Mat)img(caras[i]), bocas[j], colorBoca);
-				}
+				imgCVtemp=new cv::Mat(img.size(),img.type());
+				imagenesResultados.push_back(imgCVtemp);
 				for (size_t j = 0; j < narices.size(); j++) {
-					cv::rectangle((cv::Mat)img(caras[i]), narices[j], colorNariz);
+					cv::rectangle((*imgCVtemp),
+							cv::Rect(narices[j].x+caras[i].x,(narices[j].y+caras[i].y+(porcion4<<1)),narices[i].width,narices[i].height),
+							colorNariz,3);
 				}
+				imgCVtemp=new cv::Mat(img.size(),img.type());
+				imagenesResultados.push_back(imgCVtemp);
+				for (size_t j = 0; j < bocas.size(); j++) {
+					cv::rectangle((*imgCVtemp),
+							cv::Rect(bocas[j].x+caras[i].x,(bocas[j].y+caras[i].y+((porcion<<3)+(porcion<<1)+porcion)),bocas[i].width,bocas[i].height),
+							colorBoca,3);
+				}
+
 			}
 
 		}/**/
     }
-    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);/**/
-    const QImage imageTemp((const unsigned char*)img.data, img.cols, img.rows, img.step,
-                       QImage::Format_RGB888, &borrarMat, new cv::Mat(img));
+    //Generar Imagen
+    cv::Mat imagenRes(img.size(),img.type());
+    img.copyTo(imagenRes);
+    for(int i=1; i<imagenesResultados.size();i++){
+    	imagenRes+= *(imagenesResultados[i]);
+	}
+    cv::cvtColor(imagenRes, imagenRes, cv::COLOR_BGR2RGB);/**/
+    const QImage imageTemp((const unsigned char*)imagenRes.data, imagenRes.cols, imagenRes.rows, imagenRes.step,
+                       QImage::Format_RGB888, &borrarMat, new cv::Mat(imagenRes));
     imageTemp.rgbSwapped();
     //Q_ASSERT(image.constBits() == img.data);
     setImage(imageTemp);/**/
+    estaEjecutando=false;
 }
 
 void ImgViewer::setVideoCamara(bool activar){
@@ -258,12 +323,18 @@ void ImgViewer::pararVideo(){
 }
 
 void ImgViewer::lanzarVideo(){
+	if(!captura.isOpened()){
+		//La intentmaos abrir
+		setVideo(0);
+		if(captura.isOpened()){
+			timer.start(0,this);
+			emit videoLanzado(true);
+		}
 
-    if(captura->isOpened()){
-        timer.start(0,this);
-        emit videoLanzado();
-    }else{
-
+	}else{
+		usandoVideoCamara=false;
+		captura.release();
+		emit videoLanzado(false);
     }
 }
 
@@ -273,15 +344,17 @@ void ImgViewer::guardarImagen(){
 }
 
 void ImgViewer::timerEvent(QTimerEvent *ev){
-    if (ev->timerId() != timer.timerId())
+    if (estaEjecutando || ev->timerId() != timer.timerId())
         return;
-    qDebug()<<"Tiempo "<<timer.timerId();
+   // qDebug()<<"Tiempo "<<timer.timerId();
     cv::Mat frame;
-    if (!captura->read(frame)){
+    if (!captura.read(frame)){
         timer.stop();
         return;
     }
+    estaEjecutando=true;
     setImageCV(frame);
+    estaEjecutando=false;
 }
 
 void ImgViewer::setIndiceCamara(int indice){
@@ -292,15 +365,20 @@ void ImgViewer::setIndiceCamara(int indice){
 }
 
 void ImgViewer::setVideo(int indice){
-    captura.reset(new cv::VideoCapture(indice));
-    qDebug()<<captura->isOpened();
+	if(captura.isOpened()){
+		captura.release();
+	}
+	captura.open(indice);
+	usandoVideoCamara=true;
+    //captura.reset(new cv::VideoCapture(indice));
+    //qDebug()<<captura->isOpened();
 }
 
-void ImgViewer::setVideo(QString fichero){
+/*void ImgViewer::setVideo(QString fichero){
     captura.reset(new cv::VideoCapture(fichero.toStdString().c_str()));
 
 
-}
+}/**/
 
 void ImgViewer::mousePressEvent(QMouseEvent* event) {
 	botonPulsado[event->button()]=true;
@@ -337,6 +415,26 @@ void ImgViewer::wheelEvent(QWheelEvent* event) {
 
 	zoom+=velocidad*((event->delta()>>3)/15);
 	update();
+}
+
+void ImgViewer::ponerRejilla(int valor) {
+	conRejilla=(valor==2);
+	if(conImagen){
+		setImageCV(imagenCVOriginal);
+	}
+}
+
+void ImgViewer::ponerFiltro(int valor) {
+	conFiltro=(valor==2);
+	if(conImagen){
+		setImageCV(imagenCVOriginal);
+	}
+}
+void ImgViewer::ponerMasInfo(int valor) {
+	conMasInfo=(valor==2);
+	if(conImagen){
+		setImageCV(imagenCVOriginal);
+	}
 }
 
 void ImgViewer::resizeEvent(QResizeEvent* event) {

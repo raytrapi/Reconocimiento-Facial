@@ -16,6 +16,7 @@
 #include <QScopedPointer>
 #include <QBasicTimer>
 #include <QtGui/QWheelEvent>
+#include <vector>
 
 class ImgViewer : public QWidget{
         Q_OBJECT
@@ -30,10 +31,10 @@ class ImgViewer : public QWidget{
         cv::CascadeClassifier profileCascade;
 
         //Zona de Camara
-        QScopedPointer<cv::VideoCapture> captura;
+        cv::VideoCapture captura;
         QBasicTimer timer;
-        bool estaEjecutando;
-        bool usandoVideoCamara;
+        bool estaEjecutando=false;
+        bool usandoVideoCamara=false;
         int indiceCamara;
 
 
@@ -60,18 +61,23 @@ class ImgViewer : public QWidget{
         }
 
     signals:
-        void videoLanzado();
+        void videoLanzado(bool estado);
+
     public slots:
         void setImage(const QImage & img);
-        void setImageCV(const cv::Mat &img);
+        void setPreImageCV(const cv::Mat &img);
         void setVideoCamara(bool activar);
         void setIndiceCamara(int indice);
         void setVideo( int indice);
-        void setVideo(QString fichero);
+        /*void setVideo(QString fichero);*/
         void pararVideo();
         void lanzarVideo();
         void guardarImagen();
+        void ponerRejilla(int);
+        void ponerFiltro(int);
+        void ponerMasInfo(int);
     private:
+        void setImageCV(const cv::Mat &img);
         void timerEvent(QTimerEvent * ev);
         void paintEvent(QPaintEvent *);
         void mousePressEvent(QMouseEvent *event);
@@ -87,6 +93,14 @@ class ImgViewer : public QWidget{
         int yDesplazado=0;
         int posXRaton=0;
         int posYRaton=0;
+
+        bool conRejilla=false;
+        bool conFiltro=false;
+        bool conMasInfo=false;
+        cv::Mat imagenCVOriginal;
+        std::vector<cv::Mat *> imagenesResultados;
+        bool conImagen=false;
 };
 
 #endif // IMGVIEWER_H
+
