@@ -79,7 +79,7 @@ add_custom_command(
         #"${Boost_LIBRARY_DIR_RELEASE}/boost_system-vc141-mt-gd-x64-1_66.dll"
         #"${Boost_LIBRARY_DIR_RELEASE}/boost_regex-vc141-mt-gd-x64-1_66.dll"
         ${EXTRAS}
-        ${CMAKE_CURRENT_BINARY_DIR}/bin
+        ${CMAKE_CURRENT_BINARY_DIR}/../bin
 )
 
 install(TARGETS vision DESTINATION .

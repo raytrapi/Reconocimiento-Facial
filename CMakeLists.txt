@@ -9,9 +9,9 @@ conan_basic_setup()
 
 
 option(VISION "Habilitar construcción de visión" ON)
-option(HERRAMIENTAS "Habilitar construcción de herramientas" ON)
-option(RECORTADOR "Habilitamos la aplicación de recortes" ON)
-option(DETECTOPENCV "Habilitamos la aplicación de detección con OPENCV" ON)
+option(HERRAMIENTAS "Habilitar construcción de herramientas" OFF)
+option(RECORTADOR "Habilitamos la aplicación de recortes" OFF)
+option(DETECTOPENCV "Habilitamos la aplicación de detección con OPENCV" OFF)
 if(VISION)
     add_subdirectory(vision)
 endif()
