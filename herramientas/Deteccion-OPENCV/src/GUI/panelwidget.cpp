@@ -1,27 +1,10 @@
 #include "panelwidget.h"
 
 PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
+	//Panel Imagen
     imgViewer=new ImgViewer(this);
     QVBoxLayout *layout=new QVBoxLayout;
 
-
-    /*QSplitter *sp1=new QSplitter;
-    QVBoxLayout*lateral1=new QVBoxLayout();
-    layout->addWidget(sp1);
-    sp1->setOrientation(Qt::Vertical);
-
-    QWidget *izquierdo=new QWidget;
-    izquierdo->setLayout(lateral1);
-    izquierdo->setMaximumWidth(150);
-
-    sp1->addWidget(izquierdo);
-
-    QLabel *l1=new QLabel("Tam. Min. Faces");
-    l1->setAlignment(Qt::AlignCenter);
-    lateral1->addWidget(l1);
-    //QVBoxLayout*lateral2=new QVBoxLayout();
-    //layout->addLayout(lateral2);
-    sp1->addWidget(imgViewer);/**/
     layout->addWidget(imgViewer);
     QPushButton *selImg=new QPushButton("Selecciona imagen");
     guardar=new QPushButton("Guardar");
@@ -30,19 +13,43 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
     botonera = new QHBoxLayout();
     //botonera->setEnabled(false);
 
-
-    QRadioButton *conVideo=new QRadioButton("Video");
+    //Averiguamos si hay cámaras
+    /*QRadioButton *conVideo=new QRadioButton("Video");
     conVideo->setChecked(false);
     parteVideo->addWidget(conVideo);
 
     QObject::connect(conVideo,SIGNAL(clicked(bool)),
-                     this, SLOT(activarVideo(bool)));
-    lanzarVideo=new QPushButton ("Encender");
+                     this, SLOT(activarVideo(bool)));/**/
+    lanzarVideo=new QPushButton ("Encender Cámara");
     QObject::connect(lanzarVideo, SIGNAL(clicked(bool)),
                      imgViewer, SLOT(lanzarVideo()));
+    QObject::connect(imgViewer,SIGNAL(videoLanzado(bool)),
+    				this, SLOT(cambiarEstdoEncendido(bool)));
     parteVideo->addWidget(lanzarVideo);
-    parteVideo->setEnabled(false);
-    conVideo->setEnabled(false);
+
+    QGroupBox *parametros=new QGroupBox(tr("Parámetros"));
+    parametros->setFixedHeight(50);
+    QCheckBox *rejilla = new QCheckBox(tr("Con rejilla"));
+    QCheckBox *filtro = new QCheckBox(tr("Con filtro"));
+    QCheckBox *masInfo = new QCheckBox(tr("Con Info"));
+    QHBoxLayout *capaParametros = new QHBoxLayout;
+    capaParametros->addWidget(rejilla);
+    capaParametros->addWidget(filtro);
+    capaParametros->addWidget(masInfo);
+    capaParametros->addStretch(1);
+    parametros->setLayout(capaParametros);
+    parteVideo->addWidget(parametros);
+    QObject::connect(rejilla,SIGNAL(stateChanged(int)),
+    		imgViewer, SLOT(ponerRejilla(int)));
+    QObject::connect(filtro,SIGNAL(stateChanged(int)),
+    		imgViewer, SLOT(ponerFiltro(int)));
+    QObject::connect(masInfo,SIGNAL(stateChanged(int)),
+        		imgViewer, SLOT(ponerMasInfo(int)));
+
+
+
+    //parteVideo->setEnabled(false);
+    //conVideo->setEnabled(false);
     //QObject::connect(selImg, SIGNAL(clicked(bool)), this, SLOT(openFileDialog()));
     layout->addLayout(parteVideo);
 
@@ -65,7 +72,7 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
     img=new Img();
     imgThread.start();
     imgViewer->moveToThread(&imgThread);
-    imgViewer->connect(img, SIGNAL(matReady(cv::Mat)),SLOT(setImageCV(cv::Mat)));
+    imgViewer->connect(img, SIGNAL(matReady(cv::Mat)),SLOT(setPreImageCV(cv::Mat)));
 
     QObject::connect(this, SIGNAL(imgFileNameSignal(QString)),
                      img, SLOT(cambiarImagen(QString)));
@@ -78,7 +85,11 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
         imgThread.wait();
     }
 void PanelWidget::openFileDialog(){
-    QString filename = QFileDialog::getOpenFileName(this, tr("Imagen"));
+    if(usandoCamara){
+    	imgViewer->lanzarVideo();
+    }
+	QString filename = QFileDialog::getOpenFileName(this, tr("Imagen"));
+
     guardar->setEnabled(true);
     emit imgFileNameSignal(filename);
 
@@ -108,4 +119,15 @@ void PanelWidget::activarVideo(bool activar){
     }else{
         //imgViewer->pararVideo();
     }
+}
+
+void PanelWidget::cambiarEstdoEncendido(bool encendido) {
+qDebug()<<"llego aquí";
+	usandoCamara=encendido;
+	if(encendido){
+		lanzarVideo->setText("Apagar Cámara");
+	}else{
+		lanzarVideo->setText("Encender Cámara");
+	}
+
 }

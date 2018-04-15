@@ -29,7 +29,7 @@ namespace vision {
 					uchar color=0;
 					if(y==0){
 						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x+1,y));
-						color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
+						color=rint(0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[0]);
 						imgGris.at<uchar>(cv::Point(x+1,y))=color;
 					}else{
 						color=imgGris.at<uchar>(cv::Point(x+1,y));
@@ -39,7 +39,7 @@ namespace vision {
 				if(x==0 && y==0){
 
 					cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x,y));
-					uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
+					uchar color=rint(0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[0]);
 					imgGris.at<uchar>(cv::Point(x,y))=color;
 				}
 				if(y>0){
@@ -60,14 +60,14 @@ namespace vision {
 					}
 					if(x<limiteX){
 						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x+1,y+1));
-						uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
+						uchar color=rint(0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[0]);
 						imgGris.at<uchar>(cv::Point(x+1,y+1))=color;
 						gx+=(color);
 						gy+=(color);
 					}
 					if(x==0){
 						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x,y+1));
-						uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
+						uchar color=rint(0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[0]);
 						imgGris.at<uchar>(cv::Point(x,y+1))=color;
 						gy+=(color<<1);
 					}
@@ -80,7 +80,7 @@ namespace vision {
 				}
 				img.at<uchar>(cv::Point(x,y))=c;
 				//(*img.ptr(x,y))=0;
-				//img.at<cv::Vec3b>(cv::Point(x,y)).val[0]=0;//0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2];
+				//img.at<cv::Vec3b>(cv::Point(x,y)).val[2]=0;//0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[1];
 			}
 		}
 		return img;

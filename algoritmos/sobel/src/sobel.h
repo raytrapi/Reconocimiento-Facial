@@ -9,7 +9,7 @@
 #define ALGORITMOS_SRC_SOBEL_H_
 #include <string>
 
-#include "../../src/algoritmoPlugin.h"
+#include "../../../vision/src/algoritmoPlugin.h"
 namespace vision {
 	
 	class Sobel: public Algoritmo_plugin {
