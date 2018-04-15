@@ -16,7 +16,7 @@ set PATH=%OpenCV_BIN_DIR%;%QT5_BIN_DIR%;%BOOST_LIBRARY_DIRS%;%PATH%
 
 conan install ..
 cmake -G "NMake Makefiles"^
-   -DCMAKE_BUILD_TYPE=Release^
+   -DCMAKE_BUILD_TYPE=Debug^
    -DCMAKE_INSTALL_PREFIX=../install^
    -DOpenCV_DIR=%OpenCV_PATH%\x64\vc14\lib^
    -DBOOST_ROOT:STRING="%BOOST_PATH%"^

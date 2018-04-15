@@ -1,7 +1,7 @@
 /*
  * prewitt.cpp
  *
- *  Created on: 21 ene. 2018
+ *  Created on: 7 abril 2018
  *      Author: ray
  */
 
