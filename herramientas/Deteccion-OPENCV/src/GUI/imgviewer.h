@@ -6,6 +6,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include "../v&j/viola_jones.h"
+
 #include <QWidget>
 #include <QImage>
 #include <QString>
@@ -37,13 +39,21 @@ class ImgViewer : public QWidget{
         bool usandoVideoCamara=false;
         int indiceCamara;
 
-
+        vision::metodos::Viola_Jones vj;
 
         static void borrarMat(void *mat);
 
     public:
         explicit ImgViewer(QWidget *parent = 0) : QWidget(parent){
             setAttribute(Qt::WA_OpaquePaintEvent);
+            vision::metodos::Viola_Jones::setClasificador("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_frontalface_default.xml");
+            vision::metodos::Viola_Jones::setClasificador("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_profileface.xml");
+
+            vision::metodos::Viola_Jones::setClasificador("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_eye.xml");
+            vision::metodos::Viola_Jones::setClasificador("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_mcs_nose.xml");
+            vision::metodos::Viola_Jones::setClasificador("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_mcs_mouth.xml");
+            //vj.setDeteccionMinima(50,50);
+            //vision::metodos::Viola_Jones::setDeteccionMinima(50,50);
             sFacecascade = "E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_frontalface_default.xml";
             // sFacecascade = "haarcascade_frontalface_alt.xml";
             sEyecascade = "E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_eye.xml";
@@ -75,9 +85,11 @@ class ImgViewer : public QWidget{
         void guardarImagen();
         void ponerRejilla(int);
         void ponerFiltro(int);
-        void ponerMasInfo(int);
+        void ponerconPartes(int);
+        void ponerconInfo(int);
     private:
         void setImageCV(const cv::Mat &img);
+        void setImageCV(const cv::Mat &img, bool procesar);
         void timerEvent(QTimerEvent * ev);
         void paintEvent(QPaintEvent *);
         void mousePressEvent(QMouseEvent *event);
@@ -96,9 +108,11 @@ class ImgViewer : public QWidget{
 
         bool conRejilla=false;
         bool conFiltro=false;
-        bool conMasInfo=false;
+        bool conPartes=false;
+        bool conInfo=false;
         cv::Mat imagenCVOriginal;
         std::vector<cv::Mat *> imagenesResultados;
+        std::vector<std::vector<cv::Rect>> zonasInteres;
         bool conImagen=false;
 };
 

@@ -28,7 +28,7 @@ if (WIN32)
 endif()
 
 add_definitions(${Qt5Core_DEFINITIONS})
-file(GLOB OTROSCPP src/eigenface/*.cpp src/GUI/*.cpp)
+file(GLOB OTROSCPP src/eigenface/*.cpp src/GUI/*.cpp src/v&j/*.cpp)
 add_executable(deteccionOpenCV src/main.cpp src/img.cpp src/mainwindow.cpp ${OTROSCPP})
 target_link_libraries( deteccionOpenCV ${OpenCV_LIBS} ${Qt5Widgets_LIBRARIES} ${Boost_LIBRARIES})
 

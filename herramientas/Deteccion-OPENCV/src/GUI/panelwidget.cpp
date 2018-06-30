@@ -11,15 +11,7 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
     QHBoxLayout* parteVideo = new QHBoxLayout();
 
     botonera = new QHBoxLayout();
-    //botonera->setEnabled(false);
-
-    //Averiguamos si hay cámaras
-    /*QRadioButton *conVideo=new QRadioButton("Video");
-    conVideo->setChecked(false);
-    parteVideo->addWidget(conVideo);
-
-    QObject::connect(conVideo,SIGNAL(clicked(bool)),
-                     this, SLOT(activarVideo(bool)));/**/
+    
     lanzarVideo=new QPushButton ("Encender Cámara");
     QObject::connect(lanzarVideo, SIGNAL(clicked(bool)),
                      imgViewer, SLOT(lanzarVideo()));
@@ -31,11 +23,13 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
     parametros->setFixedHeight(50);
     QCheckBox *rejilla = new QCheckBox(tr("Con rejilla"));
     QCheckBox *filtro = new QCheckBox(tr("Con filtro"));
-    QCheckBox *masInfo = new QCheckBox(tr("Con Info"));
+    QCheckBox *conPartes = new QCheckBox(tr("Con Partes"));
+    QCheckBox *conInfo = new QCheckBox(tr("Con Info"));
     QHBoxLayout *capaParametros = new QHBoxLayout;
     capaParametros->addWidget(rejilla);
     capaParametros->addWidget(filtro);
-    capaParametros->addWidget(masInfo);
+    capaParametros->addWidget(conPartes);
+    capaParametros->addWidget(conInfo);
     capaParametros->addStretch(1);
     parametros->setLayout(capaParametros);
     parteVideo->addWidget(parametros);
@@ -43,8 +37,10 @@ PanelWidget::PanelWidget(QWidget *parent) : QWidget(parent){
     		imgViewer, SLOT(ponerRejilla(int)));
     QObject::connect(filtro,SIGNAL(stateChanged(int)),
     		imgViewer, SLOT(ponerFiltro(int)));
-    QObject::connect(masInfo,SIGNAL(stateChanged(int)),
-        		imgViewer, SLOT(ponerMasInfo(int)));
+    QObject::connect(conPartes,SIGNAL(stateChanged(int)),
+        		imgViewer, SLOT(ponerconPartes(int)));
+    QObject::connect(conInfo,SIGNAL(stateChanged(int)),
+        		imgViewer, SLOT(ponerconInfo(int)));
 
 
 

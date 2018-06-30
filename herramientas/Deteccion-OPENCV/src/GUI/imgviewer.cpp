@@ -98,215 +98,149 @@ void ImgViewer::setPreImageCV(const cv::Mat &img){
 	setImageCV(img);
 }
 void ImgViewer::setImageCV(const cv::Mat &img){
+	setImageCV(img, true);
+}
+void ImgViewer::setImageCV(const cv::Mat &img, bool procesar){
 	//img.copyTo();
-	//bool conRejilla=true;
-	//bool conMasInfo=true;
+	//bool conPartes=true;
 	//bool conFiltro=true;
-	for(int i=0; i<imagenesResultados.size();i++){
-		delete imagenesResultados[i];
+	
+	if(procesar || zonasInteres.size()==0){
+		vision::metodos::Viola_Jones::setDeteccionMinima(10,20);	
+		if(conRejilla || conPartes){
+			zonasInteres=vision::metodos::Viola_Jones::procesar(img,{0});
+		}else{
+			zonasInteres=vision::metodos::Viola_Jones::procesar(img);
+		}
 	}
-	imagenesResultados.clear();
-	estaEjecutando=true;
-	qDebug()<<"**************************************";
-	qDebug()<<"    Comenzamos procesado de imagen    ";
-	qDebug()<<"**************************************";
-	qDebug()<<"**************************************\r\n\r\n";
-	std::clock_t tiempoInicio = std::clock();
-	std::clock_t tiempoParcial=tiempoInicio;
-	std::clock_t tiempoFinal;
-
-
-    cv::Mat *grey_image=new cv::Mat(img.size(),img.type());
-    imagenesResultados.push_back(grey_image);
-    qDebug()<<"Convertimos a gris";
-    cv::cvtColor(img, *grey_image, CV_BGR2GRAY);
-    cv::equalizeHist(*grey_image, *grey_image);
-
-    tiempoFinal=std::clock();
-    qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
-
-
-    std::vector<cv::Rect> caras;
-    //std::vector<cv::Rect> facesFrente;
-    std::vector<cv::Rect> carasEnPerfil;
-    std::vector<cv::Rect> ojos;
-    std::vector<cv::Rect> bocas;
-    std::vector<cv::Rect> narices;
-    // Buscamos los rostros dentro de la imagen
-    int proporcion=100;
-    qDebug()<<"Busco caras";
-    tiempoParcial=std::clock();
-    faceCascade.detectMultiScale(*grey_image, caras, 1.1, 3,  0|CV_HAAR_SCALE_IMAGE,
-                                 cv::Size(img.cols/proporcion, img.rows/proporcion));/**/
-
-    tiempoFinal=std::clock();
-    qDebug()<<"Se han encontrado "<<caras.size()<<" posibles caras";
-    qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
-
-
-    cv::Scalar colorCaraRejilla(128,128,128);
-    cv::Scalar colorRejilla(128,128,128, 0.1);
-    cv::Mat *imgCVtemp;
-    for( size_t i = 0; i < caras.size(); i++){
-
-    	if(conRejilla){
-    		imgCVtemp=new cv::Mat(img.size(),img.type());
-    		imagenesResultados.push_back(imgCVtemp);
-    		cv::rectangle((cv::Mat)(*imgCVtemp), caras[i], colorCaraRejilla,1);
-			//Representamos la rejilla de proporci�n
-			cv::Point pEsquinaSuperior(caras[i].x,caras[i].y);
-			cv::Point pEsquinaInferior(caras[i].x+caras[i].width-1,caras[i].y+caras[i].height-1);
-			int aumento=caras[i].width/5;
-			int aumentoActual=0;
-			imgCVtemp=new cv::Mat(img.size(),img.type());
-			imagenesResultados.push_back(imgCVtemp);
-			for(int i=0;i<5;i++){
-				cv::line((cv::Mat)(*imgCVtemp),
-						cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y),
-						cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y),
-						colorRejilla,1);
-				aumentoActual+=aumento;
-			}
-			aumento=caras[i].height/16;
-			aumentoActual=0;
-
-			for(int i=0;i<16;i++){
-				//cv::Point sup(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y);
-				//cv::Point inf(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y);
-				cv::line((cv::Mat)(*imgCVtemp),
-						cv::Point(pEsquinaSuperior.x,pEsquinaSuperior.y+aumentoActual),
-						cv::Point(pEsquinaInferior.x,pEsquinaSuperior.y+aumentoActual),
-						colorRejilla,1);
-				aumentoActual+=aumento;
-			}
-    	}
-
-    }/**/
-
-
-    /*faceCascade.detectMultiScale(grey_image, carasEnPerfil, 1.1, 1,  0|CV_HAAR_SCALE_IMAGE,
-                                 cv::Size(img.cols/proporcion, img.rows/proporcion));
-    //Unimos los vectores
-    caras.insert(caras.end(),carasEnPerfil.begin(),carasEnPerfil.end());/**/
-
-    if(conMasInfo){
-		cv::Scalar colorCara(255,0,255); // Azul + Rojo = Violeta
-		cv::Scalar colorOjo(0, 255, 0);  // Verde
-		cv::Scalar colorBoca(255,0, 0);  // Azul
-		cv::Scalar colorNariz(0,0, 255); // Rojo
-		int limiteCoincidenciaCara=3;
-		int coincidencias=6;
-		for( size_t i = 0; i < caras.size(); i++){
-			coincidencias=0;
-
-			cv::Mat faceROI=(*grey_image)(caras[i]);
-			qDebug()<<"Busco Ojos";
-			tiempoParcial=std::clock();
-			/*eyeCascade.detectMultiScale(faceROI,ojos, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-										cv::Size(caras[i].width/5, caras[i].height/8));/**/
-			int porcion=faceROI.rows/16;
-			int porcion4=porcion<<2;
-			qDebug()<<porcion;
-			qDebug()<<porcion4;
-			qDebug()<<(porcion4+(porcion<<1)+porcion);
-			qDebug()<<(porcion<<3);
-			cv::Mat zonaOjos(faceROI, cv::Rect(0, porcion4, faceROI.cols, porcion4+porcion) );
-			eyeCascade.detectMultiScale(zonaOjos,ojos, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-													cv::Size(caras[i].width/5, caras[i].height/8));
-			tiempoFinal=std::clock();
-			qDebug()<<"Se han encontrado "<<ojos.size();
-			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
-
-			qDebug()<<"Busco narices";
-			//cv::Mat zonaNariz(faceROI, cv::Rect(0, porcion4+(porcion<<1)+porcion, faceROI.cols, porcion4) );
-			cv::Mat zonaNariz(faceROI, cv::Rect(0, porcion4<<1, faceROI.cols, porcion4) );
-			tiempoParcial=std::clock();
-			noseCascade.detectMultiScale(zonaNariz,narices, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-										cv::Size(caras[i].width/5, caras[i].height/8));
-			tiempoFinal=std::clock();
-			qDebug()<<"Se han encontrado "<<narices.size();
-			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
-
-			qDebug()<<"Busco bocas";
-			//cv::Mat zonaBoca(faceROI, cv::Rect(0, porcion<<3, faceROI.cols, porcion4) );
-			cv::Mat zonaBoca(faceROI, cv::Rect(0, (porcion<<3)+(porcion<<1)+porcion, faceROI.cols, porcion4) );
-			tiempoParcial=std::clock();
-			mouthCascade.detectMultiScale(zonaBoca,bocas, 1.1,2,0|CV_HAAR_SCALE_IMAGE,
-										cv::Size(caras[i].width*(3/5), caras[i].height/8));
-			tiempoFinal=std::clock();
-			qDebug()<<"Se han encontrado "<<bocas.size();
-			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms";
-
-
-
-
-
-			if(ojos.size()>2){
-				coincidencias+=4;
-			}else{
-				coincidencias+=(int)ojos.size()*2;
-			}
-			if(bocas.size()>1){
-				coincidencias+=1;
-			}else{
-				coincidencias+=(int)bocas.size();
-			}
-			if(narices.size()>1){
-				coincidencias+=1;
-			}else{
-				coincidencias+=(int)narices.size();
-			}
-			tiempoFinal=std::clock();
-			qDebug()<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoInicio) / CLOCKS_PER_SEC)<<"ms";
-			qDebug()<<"Se han encontrado "<<coincidencias<< " coincidencias.";
-			if(coincidencias>=limiteCoincidenciaCara || !conFiltro){
-				int porcion=caras[i].height/16;
-				int porcion4=porcion<<2;
-				imgCVtemp=new cv::Mat(img.size(),img.type());
-				imagenesResultados.push_back(imgCVtemp);
-
-				cv::rectangle((cv::Mat)(*imgCVtemp), caras[i], colorCara);
-
-				imgCVtemp=new cv::Mat(img.size(),img.type());
-				imagenesResultados.push_back(imgCVtemp);
-
-				for (size_t j = 0; j < ojos.size(); j++) {
-					cv::rectangle((*imgCVtemp),
-							cv::Rect(ojos[j].x+caras[i].x,(ojos[j].y+caras[i].y+porcion4),ojos[i].width,ojos[i].height),
-							colorOjo,3);
+	//cv::cvtColor(res, res, cv::COLOR_BGR2RGB);/**/
+	/*const QImage imageTemp((const unsigned char*)res.data, res.cols, res.rows, res.step,
+					   ((res.channels()>1)?QImage::Format_RGB888:QImage::Format_Grayscale8), &borrarMat, new cv::Mat(res));
+	imageTemp.rgbSwapped();/**/
+	
+	
+	//Q_ASSERT(image.constBits() == img.data);
+	std::vector<cv::Scalar> colores;
+	colores.push_back(cv::Scalar(255,0,255)); // Azul + Rojo = Violeta
+	colores.push_back(cv::Scalar(255,255,0)); // Verde + Azul = 
+	colores.push_back(cv::Scalar(0,0,255));
+	colores.push_back(cv::Scalar(255,0,0));
+	colores.push_back(cv::Scalar(0,255,0));
+	
+	cv::Mat * temp=new cv::Mat(img);
+	int numRois=0;
+	for(int i = 0;i < zonasInteres.size();i++){
+		for(int j = 0;j < zonasInteres[i].size();j++){
+			cv::Rect roi=zonasInteres[i][j];
+			std::vector<std::pair<cv::Rect,cv::Scalar>> rois;
+			rois.push_back(std::pair<cv::Rect,cv::Scalar>(roi,colores[i]));
+			bool esCara=true;
+			if(conPartes){
+				//Buscamos los ojos
+				
+				int porcion[2];
+				porcion[0]=roi.width/5;
+				porcion[1]=roi.height/8;
+				std::vector<std::vector<cv::Rect>> partes;
+				partes=vision::metodos::Viola_Jones::procesar(
+					cv::Mat(img, cv::Rect(roi.x, roi.y+porcion[1], roi.width, porcion[1]<<2)),{2});
+				esCara=(partes[0].size()>0 && partes[0].size()<=2);
+				for(int j=0;j<partes[0].size();j++){
+					partes[0][j].x+=roi.x;
+					partes[0][j].y+=roi.y+porcion[1];
+					rois.push_back(std::pair<cv::Rect,cv::Scalar>(partes[0][j],colores[2]));
+				}/**/
+				bool tieneNariz=false;
+				partes=vision::metodos::Viola_Jones::procesar(
+					cv::Mat(img, cv::Rect(roi.x+porcion[0], roi.y+(porcion[1]<<1)+porcion[1], (porcion[0]<<1)+porcion[0], (porcion[1]<<1)+porcion[1])),{3});
+				tieneNariz=(partes[0].size()==1);
+				for(int j=0;j<partes[0].size();j++){
+					partes[0][j].x+=roi.x+porcion[0];
+					partes[0][j].y+=roi.y+(porcion[1]<<1)+porcion[1];
+					rois.push_back(std::pair<cv::Rect,cv::Scalar>(partes[0][j],colores[3]));
 				}
-				imgCVtemp=new cv::Mat(img.size(),img.type());
-				imagenesResultados.push_back(imgCVtemp);
-				for (size_t j = 0; j < narices.size(); j++) {
-					cv::rectangle((*imgCVtemp),
-							cv::Rect(narices[j].x+caras[i].x,(narices[j].y+caras[i].y+(porcion4<<1)),narices[i].width,narices[i].height),
-							colorNariz,3);
+				partes=vision::metodos::Viola_Jones::procesar(
+					cv::Mat(img, cv::Rect(roi.x, roi.y+(porcion[1]<<2)+porcion[1], roi.width, (porcion[1]<<1)+porcion[1])),{4});
+				esCara=esCara && tieneNariz&&(partes[0].size()==1);
+				for(int j=0;j<partes[0].size();j++){
+					partes[0][j].x+=roi.x;
+					partes[0][j].y+=roi.y+(porcion[1]<<2)+porcion[1];
+					rois.push_back(std::pair<cv::Rect,cv::Scalar>(partes[0][j],colores[4]));
 				}
-				imgCVtemp=new cv::Mat(img.size(),img.type());
-				imagenesResultados.push_back(imgCVtemp);
-				for (size_t j = 0; j < bocas.size(); j++) {
-					cv::rectangle((*imgCVtemp),
-							cv::Rect(bocas[j].x+caras[i].x,(bocas[j].y+caras[i].y+((porcion<<3)+(porcion<<1)+porcion)),bocas[i].width,bocas[i].height),
-							colorBoca,3);
-				}
+				/*partes=vision::metodos::Viola_Jones::procesar(
+					cv::Mat(img, cv::Rect(roi.x+(porcion[0]<<1)+porcion[0], roi.y+(porcion[1]<<1), porcion[0]<<1, porcion[1]<<1)),{2});
+				for(int j=0;j<partes[0].size();j++){
+					partes[0][j].x+=roi.x+(porcion[0]<<1)+porcion[0];
+					partes[0][j].y+=roi.y+(porcion[1]<<1);
+					cv::rectangle((cv::Mat)(*temp), partes[0][j], colores[2],1);
+				}*/
 
+				//cv::rectangle((cv::Mat)(*temp), cv::Rect(roi.x+porcion[0], roi.y+(porcion[1]<<1)+porcion[1], (porcion[0]<<1)+porcion[0], (porcion[1]<<1)+porcion[1]), colores[1],1);
 			}
+			if(esCara){
+				for(int k=0;k<rois.size();k++){
+					cv::rectangle(*temp, rois[k].first, rois[k].second);
+				}
+			}
+			if(conRejilla){
+				int rejillasAncho=5;
+				int rejillasAlto=8;
 
-		}/**/
-    }
-    //Generar Imagen
-    cv::Mat imagenRes(img.size(),img.type());
-    img.copyTo(imagenRes);
-    for(int i=1; i<imagenesResultados.size();i++){
-    	imagenRes+= *(imagenesResultados[i]);
+				cv::Scalar colorCaraRejilla(128,128,128);
+				cv::Scalar colorRejilla(128,128,128, 0.1);
+				//temp=new cv::Mat(img.size(),img.type());
+				//imagenesResultados.push_back(temp);
+				cv::rectangle((cv::Mat)(*temp), roi, colorCaraRejilla,1);
+				//Representamos la rejilla de proporci�n
+				cv::Point pEsquinaSuperior(roi.x,roi.y);
+				cv::Point pEsquinaInferior(roi.x+roi.width-1,roi.y+roi.height-1);
+				int aumento=roi.width/rejillasAncho;
+				int aumentoActual=0;
+				//temp=new cv::Mat(img.size(),img.type());
+				//imagenesResultados.push_back(temp);
+				for(int i=0;i<rejillasAncho;i++){
+					cv::line((cv::Mat)(*temp),
+							cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y),
+							cv::Point(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y),
+							colorRejilla,1);
+					aumentoActual+=aumento;
+				}
+				aumento=roi.height/rejillasAlto;
+				aumentoActual=0;
+
+				for(int i=0;i<rejillasAlto;i++){
+					//cv::Point sup(pEsquinaSuperior.x+aumentoActual,pEsquinaSuperior.y);
+					//cv::Point inf(pEsquinaSuperior.x+aumentoActual,pEsquinaInferior.y);
+					cv::line((cv::Mat)(*temp),
+							cv::Point(pEsquinaSuperior.x,pEsquinaSuperior.y+aumentoActual),
+							cv::Point(pEsquinaInferior.x,pEsquinaSuperior.y+aumentoActual),
+							colorRejilla,1);
+					aumentoActual+=aumento;
+				}
+			}
+			
+			if(conInfo)	{
+				std::string numero=std::to_string(++numRois)+" - "+std::to_string(roi.width)+"x"+std::to_string(roi.height);
+				int fontFace = cv::FONT_HERSHEY_COMPLEX_SMALL;
+				double fontScale = 1;
+				int thickness = 1;
+				int baseLine=0;
+				const char * numeroStr=numero.c_str();
+				int padding= 4;
+				qDebug()<<"baseLine: "<<baseLine;
+				cv::Size lengthTexto=cv::getTextSize(numeroStr,fontFace,fontScale,thickness,&baseLine);
+				cv::rectangle(*temp, cv::Rect(roi.x,roi.y-(lengthTexto.height+padding),lengthTexto.width+4,(lengthTexto.height+padding)), cv::Scalar(255,255,255,0.7),-1);
+				cv::putText(*temp, numeroStr ,cv::Point((roi.x+(padding>>1)),(roi.y-(padding>>1))),fontFace,fontScale,cv::Scalar(0,0,0),thickness,8,false);
+			}
+		}
 	}
-    cv::cvtColor(imagenRes, imagenRes, cv::COLOR_BGR2RGB);/**/
-    const QImage imageTemp((const unsigned char*)imagenRes.data, imagenRes.cols, imagenRes.rows, imagenRes.step,
-                       QImage::Format_RGB888, &borrarMat, new cv::Mat(imagenRes));
-    imageTemp.rgbSwapped();
-    //Q_ASSERT(image.constBits() == img.data);
-    setImage(imageTemp);/**/
-    estaEjecutando=false;
+	//if(temp->)
+	cv::cvtColor(*temp,*temp, cv::COLOR_BGR2RGB);
+	const QImage imageTemp((const unsigned char*)temp->data, temp->cols, temp->rows, temp->step,
+					   ((temp->channels()>1)?QImage::Format_RGB888:QImage::Format_Grayscale8), &borrarMat, new cv::Mat(*temp));
+	imageTemp.rgbSwapped();
+	
+	setImage(imageTemp);
 }
 
 void ImgViewer::setVideoCamara(bool activar){
@@ -339,7 +273,8 @@ void ImgViewer::lanzarVideo(){
 }
 
 void ImgViewer::guardarImagen(){
-     QString filename = QFileDialog::getSaveFileName(this, tr("Imagen"));
+    QString filename = QFileDialog::getSaveFileName(this, tr("Guardar imagen"),"untitled.jpg",
+                           tr("Images (*.jpg *.png *.xpm)"));
     imageOriginal.save(filename);
 }
 
@@ -430,12 +365,17 @@ void ImgViewer::ponerFiltro(int valor) {
 		setImageCV(imagenCVOriginal);
 	}
 }
-void ImgViewer::ponerMasInfo(int valor) {
-	conMasInfo=(valor==2);
+void ImgViewer::ponerconPartes(int valor) {
+	conPartes=(valor==2);
 	if(conImagen){
 		setImageCV(imagenCVOriginal);
 	}
 }
-
+void ImgViewer::ponerconInfo(int valor) {
+	conInfo=(valor==2);
+	if(conImagen){
+		setImageCV(imagenCVOriginal,false);
+	}
+}
 void ImgViewer::resizeEvent(QResizeEvent* event) {
 }
