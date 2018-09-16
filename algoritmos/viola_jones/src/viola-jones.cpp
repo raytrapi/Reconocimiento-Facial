@@ -8,6 +8,10 @@
 #include "../../viola_jones/src/viola-jones.h"
 
 namespace vision {
+
+   ViolaJones::ViolaJones(){
+      crearParametro("encontrados", TIPO::NUMBER);
+   }
 	/**
 	 * Se encarga de generar la matriz con la suma integral
 	 * @param img es una Matriz en escala de grises
@@ -25,9 +29,9 @@ namespace vision {
 	/**
 	 * Se encarga de generar la matriz con la suma integral
 	 * @param img es un cv::Mat en color RGB
-	 * @param imgGris es un cv::Mat en Gris calculado en este método
+	 * @param imgGris es un cv::Mat en Gris calculado en este mï¿½todo
 	 *
-	 * @return un array de UINT64 con los valores integrados según la especificación del documento de Viola & Jones
+	 * @return un array de UINT64 con los valores integrados segï¿½n la especificaciï¿½n del documento de Viola & Jones
 	 */
 	unsigned long long int* ViolaJones::sumaIntegral(
 			const cv::Mat& img, cv::Mat& imgGris) {
@@ -59,123 +63,27 @@ namespace vision {
 		return integral[(x+desplazarX-1)+width*(y+desplazarY-1)]+(x>0&&y>0?integral[(x-1)+width*(y-1)]:0)-(x>0?integral[(x-1)+width*(y+desplazarY-1)]:0)-(y>0?integral[(x+desplazarX-1)+width*(y-1)]:0);
 	}
 
-	cv::Mat ViolaJones::procesar(const cv::Mat& imgOriginal) {
+	bool ViolaJones::procesar(const cv::Mat& imgOriginal) {
+	   vision::metodos::Viola_Jones::setClasificador((const char *)(boost::filesystem::current_path().append("clasificadores/haarcascade_frontalface_default.xml").generic_string().c_str()),"Cara",QColor(255,0,255,0));
+	   vision::metodos::Viola_Jones::setClasificador((const char *)(boost::filesystem::current_path().append("clasificadores/haarcascade_profileface.xml").generic_string().c_str()),"Perfil",QColor(255,255,0,0));
 
+	   std::vector<vision::metodos::RestClasificacion> zonasInteres=vision::metodos::Viola_Jones::procesar(imgOriginal,{0,1},true);
+	   cv::Mat  temp=imgOriginal.clone();
+	   this->zonas.clear();
+	   for(int i=0; i < zonasInteres.size(); i++){
+	      cv::Scalar colorCV(0,0,255);
+	      std::vector<std::pair<cv::Rect_<double>,bool>> zonas=(std::vector<std::pair<cv::Rect_<double>,bool>>)zonasInteres[i].clasificados;
 
-		//log("Llego");
-		cv::Mat img(imgOriginal.rows,imgOriginal.cols,CV_8U);
-		cv::Mat imgGris(imgOriginal.rows,imgOriginal.cols,CV_8U);
-		unsigned long long int *integral=sumaIntegral(imgOriginal,imgGris);
-
-		unsigned long long int v;
-		for(int y=0;y<imgOriginal.rows-100;y++){
-			for(int x=0;x<imgOriginal.cols-100;x++){
-
-				v=0;
-				/*for(int i=0;i<100;i++){
-					for(int j=0;j<100;j++){
-						v+=imgGris.at<uchar>(cv::Point(x+i,y+j));
-
-					}
-				}/**/
-				v=valorIntegral(integral, x, y, 100,100,imgOriginal.cols, imgOriginal.rows);
-			}
-			std::cout<<v<<"\r\n";
-		}
-		/*unsigned long long int vR[3]={0,0,0};
-		unsigned long long int vI[3]={0,0,0};
-		int pruebasX[3]={0,imgGris.cols-100,150};
-		int pruebasY[3]={0,imgGris.rows-100,150};
-		for(int x=0;x<100;x++){
-			for(int y=0;y<100;y++){
-				vR[0]+=imgGris.at<uchar>(cv::Point(x+pruebasX[0],y+pruebasY[0]));
-				vR[1]+=imgGris.at<uchar>(cv::Point(x+pruebasX[1],y+pruebasY[1]));
-				vR[2]+=imgGris.at<uchar>(cv::Point(x+pruebasX[2],y+pruebasY[2]));
-			}
-		}/**/
-		/*vI[0]=valorIntegral(integral, pruebasX[0], pruebasY[0], 100,100,imgOriginal.cols, imgOriginal.rows);
-		vI[1]=valorIntegral(integral, pruebasX[1], pruebasY[1], 100,100,imgOriginal.cols, imgOriginal.rows);
-		vI[2]=valorIntegral(integral, pruebasX[2], pruebasY[2], 100,100,imgOriginal.cols, imgOriginal.rows);
-		/*std::cout<<"VR[0]"<<vR[0]<<"\r\n";
-		std::cout<<"VR[1]"<<vR[1]<<"\r\n";
-		std::cout<<"VR[2]"<<vR[2]<<"\r\n";
-		std::cout<<"VI[0]"<<valorIntegral(integral, pruebasX[0], pruebasY[0], 100,100,imgOriginal.cols, imgOriginal.rows)<<"\r\n";
-		std::cout<<"VI[1]"<<valorIntegral(integral, pruebasX[1], pruebasY[1], 100,100,imgOriginal.cols, imgOriginal.rows)<<"\r\n";
-		std::cout<<"VI[2]"<<valorIntegral(integral, pruebasX[2], pruebasY[2], 100,100,imgOriginal.cols, imgOriginal.rows)<<"\r\n";*/
-		delete integral;
-		return imgGris;
-		int limiteX=imgOriginal.cols-1;
-		int limiteY=imgOriginal.rows-1;
-		for(int x=0; x<imgOriginal.cols; x++){
-			for(int y=0; y<imgOriginal.rows; y++){
-
-				int gx=0;
-				int gy=0;
-				int color=0;
-				if(x>0){
-					gx-=(imgGris.at<uchar>(cv::Point(x-1,y))<<1);
-
-				}
-				if(x<limiteX){
-					uchar color=0;
-					if(y==0){
-						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x+1,y));
-						color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
-						imgGris.at<uchar>(cv::Point(x+1,y))=color;
-					}else{
-						color=imgGris.at<uchar>(cv::Point(x+1,y));
-					}
-					gx+=(color<<1);
-				}
-				if(x==0 && y==0){
-
-					cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x,y));
-					uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
-					imgGris.at<uchar>(cv::Point(x,y))=color;
-				}
-				if(y>0){
-					if(x>0){
-						gx-=(imgGris.at<uchar>(cv::Point(x-1,y-1)));
-						gy-=(imgGris.at<uchar>(cv::Point(x-1,y-1)));
-					}
-					if(x<limiteX){
-						gx+=(imgGris.at<uchar>(cv::Point(x+1,y-1)));
-						gy-=(imgGris.at<uchar>(cv::Point(x+1,y-1)));
-					}
-					gy-=(imgGris.at<uchar>(cv::Point(x,y-1))<<1);
-				}
-				if(y<limiteY){
-					if(x>0){
-						gx-=(imgGris.at<uchar>(cv::Point(x-1,y+1))<<1);
-						gy+=(imgGris.at<uchar>(cv::Point(x-1,y+1)));
-					}
-					if(x<limiteX){
-						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x+1,y+1));
-						uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
-						imgGris.at<uchar>(cv::Point(x+1,y+1))=color;
-						gx+=(color);
-						gy+=(color);
-					}
-					if(x==0){
-						cv::Vec3b pixel = imgOriginal.at<cv::Vec3b>(cv::Point(x,y+1));
-						uchar color=rint(0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2]);
-						imgGris.at<uchar>(cv::Point(x,y+1))=color;
-						gy+=(color<<1);
-					}
-				}/**/
-				int c=sqrt(gx*gx-gy*gy);
-				if(c>200){
-					c=255;
-				}else{
-					c=0;
-				}
-				img.at<uchar>(cv::Point(x,y))=c;
-				//(*img.ptr(x,y))=0;
-				//img.at<cv::Vec3b>(cv::Point(x,y)).val[0]=0;//0.21*pixel.val[0]+0.72*pixel.val[1]+0.07*pixel.val[2];
-			}
-		}
-		return img;
-		//return imgGris;
+	      for(int j = 0;j < zonas.size();j++){
+	         if(zonas[j].second){
+	            this->zonas.push_back(zonas[j].first);
+	            cv::rectangle(temp, zonas[j].first, colorCV);
+	         }
+	      }
+	   }
+	   setValor<void*>("zonas",(void *)&this->zonas);
+	   setValor<cv::Mat>("imagen",temp);
+	   return true;
 	}
 
 } /* namespace vision */

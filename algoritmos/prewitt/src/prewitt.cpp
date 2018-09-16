@@ -8,7 +8,7 @@
 #include "prewitt.h"
 
 namespace vision {
-	cv::Mat Prewitt::procesar(const cv::Mat& imgOriginal) {
+	bool Prewitt::procesar(const cv::Mat& imgOriginal) {
 
 		//log("Llego");
 		cv::Mat img(imgOriginal.rows,imgOriginal.cols,CV_8U);
@@ -83,7 +83,8 @@ namespace vision {
 				//img.at<cv::Vec3b>(cv::Point(x,y)).val[2]=0;//0.21*pixel.val[2]+0.72*pixel.val[1]+0.07*pixel.val[1];
 			}
 		}
-		return img;
+		setValor<cv::Mat>("imagen",img);
+		return true;
 		//return imgGris;
 	}
 

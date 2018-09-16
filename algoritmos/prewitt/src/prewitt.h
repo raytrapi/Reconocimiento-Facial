@@ -16,7 +16,7 @@ namespace vision {
 		public:
 			~Prewitt(){};
 			const char * getNombre()const{return "Prewitt";};
-			cv::Mat procesar(const cv::Mat & imgOriginal);
+			bool procesar(const cv::Mat & imgOriginal);
 
 	};
 

@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QDialog>
+#include <QApplication>
+#include <QDialog>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -10,7 +10,7 @@
 QCoreApplication* createApplication(int &argc, char *argv[]){
 	QCoreApplication::setOrganizationName("ray");
 	QCoreApplication::setOrganizationDomain("programacionextrema.es");
-	QCoreApplication::setApplicationName(QString::fromLatin1("Recortador de im·genes"));
+	QCoreApplication::setApplicationName(QString::fromUtf8("Recortador de im√°genes"));
     for (int i = 1; i < argc; ++i)
         if (!qstrcmp(argv[i], "-no-gui"))
             return new QCoreApplication(argc, argv);

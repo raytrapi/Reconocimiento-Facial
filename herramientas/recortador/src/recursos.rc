@@ -1,2 +1,3 @@
 IDI_ICON1	ICON	DISCARDABLE	"img/i.ico"
-folder	PNG	"img/folder.png"
+//FOLDER	PNG	"img/folder.png"
+//FOLDER_ICO	RCDATA	"img/folder.png"

@@ -16,7 +16,7 @@ namespace vision {
 		public:
 			~Sobel(){};
 			const char * getNombre()const{return "Sobel";};
-			cv::Mat procesar(const cv::Mat & imgOriginal);
+			bool procesar(const cv::Mat & imgOriginal);
 
 	};
 

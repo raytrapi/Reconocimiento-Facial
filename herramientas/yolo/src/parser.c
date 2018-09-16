@@ -1224,11 +1224,15 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
         fread(&iseen, sizeof(int), 1, fp);
         *net->seen = iseen;
     }
+    //printf("%u\n", *net->seen);
+    //*net->seen=0;
     int transpose = (major > 1000) || (minor > 1000);
 
     int i;
     for(i = start; i < net->n && i < cutoff; ++i){
+
         layer l = net->layers[i];
+        //printf("%d %d\n",i,l.type);
         if (l.dontload) continue;
         if(l.type == CONVOLUTIONAL || l.type == DECONVOLUTIONAL){
             load_convolutional_weights(l, fp);

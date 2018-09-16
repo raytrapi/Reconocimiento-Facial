@@ -27,7 +27,8 @@ void Stealth(bool ocultar){
 
 int main(int argc, char* argv[]){
 #ifdef WIN32
-    //SetConsoleOutputCP(65001);
+   UINT WINAPI consolaCP=GetConsoleOutputCP();
+   //SetConsoleOutputCP(65001);
 #endif
 	int res=0;
 	/*if(argc>1){
@@ -77,6 +78,7 @@ int main(int argc, char* argv[]){
 
 	#ifdef WIN32
 		//Stealth(false);
+	   SetConsoleOutputCP(consolaCP);
 	#endif
 
 

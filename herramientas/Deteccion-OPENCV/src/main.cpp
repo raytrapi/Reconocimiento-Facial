@@ -4,6 +4,8 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    a.setOrganizationName("Ray");
+    a.setApplicationName("Reconocimiento");
     MainWindow w;
     w.show();
 

@@ -136,4 +136,6 @@ static __inline time_t __CRTDECL time(time_t * _Time)
 
 
 #endif  /* RC_INVOKED */
+
+
 #endif  /* _INC_TIME_INL */

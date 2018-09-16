@@ -2,7 +2,31 @@
 #define MAINDIALOG_H
 
 #include <iostream>
-#include <QtCore/QStandardPaths>
+#include <QtCore>
+#include <QDialog>
+#include <QFrame>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QLabel>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QMenu>
+#include <QMenuBar>
+#include <QAction>
+#include <QStatusBar>
+#include <QToolBar>
+#include <QHBoxLayout>
+#include <QComboBox>
+#include <QTextEdit>
+
+
+#include <QImageReader>
+#include <QImageWriter>
+#include <QGuiApplication>
+#include <QScreen>
+#include <QPainter>
+#include <QWheelEvent>
+/*#include <QtCore/QStandardPaths>
 #include <QtCore/QDebug>
 #include <QtCore/QSettings>
 #include <QtCore/QDir>
@@ -30,12 +54,17 @@
 #include <QtGui/QScreen>
 #include <QtGui/QPainter>
 #include <QtGui/QWheelEvent>
-
+*/
 #include <boost/thread.hpp>
 
-#include <stdio.h>
+#include <iostream>
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <qlineedit.h>
+
+//#include "../../../utilidades/controles/visor/src/selector.h"
+#include "../../../utilidades/controles/visor/src/visorwidget.h"
+//#include <visor.h>
 /*#include "utiles/config.h"
 #include "utiles/log.h"
 #include "inicializar.h"
@@ -46,9 +75,11 @@ using namespace cv;
 //using namespace ray::utiles;
 class DialogoRecortador : public QMainWindow{
 	Q_OBJECT
+
 	const int WW=1024;
 	const int WH=768;
 	const int PADDING[4]={5,5,5,5};
+	VisorWidget *imgViewer;
 	/*const int PL=5;
 	const int PT=5;
     const int PR=5;
@@ -72,6 +103,7 @@ class DialogoRecortador : public QMainWindow{
 	public slots:
 	 	 void open();
 	 	 void abrirCarpeta();
+	 	 void recortar();
 	private:
 
 
@@ -81,14 +113,15 @@ class DialogoRecortador : public QMainWindow{
 	 	void updateActions();
 	 	static void borrarMat(void *mat);
 	 	void paintEvent(QPaintEvent *);
-	 	void mousePressEvent(QMouseEvent *event);
+	 	/*void mousePressEvent(QMouseEvent *event);
  	    void mouseMoveEvent(QMouseEvent *event);
  	    void mouseReleaseEvent(QMouseEvent *event);
  	    void wheelEvent(QWheelEvent *event);
- 	    void resizeEvent(QResizeEvent *event);
+ 	    void resizeEvent(QResizeEvent *event);*/
 
 
 		QImage imagen;
+		//std::vector<vision::recortador::Seleccion> selecciones;
 		QImage imagenTratada;
 		QMainWindow *menuPrincipal;
 		//QToolBar toolBar;
@@ -107,8 +140,15 @@ class DialogoRecortador : public QMainWindow{
 		//ray::dll::Librerias<vision::Plugin> librerias;
 		QComboBox *algoritmos;
 		QTextEdit log;
+		QLineEdit tbOrigen;
+		QLineEdit tbDestino;
+		QLineEdit tbAnchoDestino;
+		QLineEdit tbAltoDestino;
+
+
 
 		QString ruta;
+		QString rutaSalida=NULL;
 		QStringList ficheros;
 		int posicion;
 		qreal escala=1;

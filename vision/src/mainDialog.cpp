@@ -2,9 +2,7 @@
 
 MainDialog::MainDialog(){
 	QSettings configuracion;
-	if(configuracion.contains("rutaFichero")){
-		loadFile(configuracion.value("rutaFichero").toString());
-	}
+
 	menuPrincipal=new QMainWindow(this, Qt::Widget);
 	menuPrincipal->addToolBar(new QToolBar());
 	 resize(WW,WH);
@@ -22,16 +20,41 @@ MainDialog::MainDialog(){
 
     	}
     }
+    QObject::connect(algoritmos, SIGNAL(currentIndexChanged(int)),
+                this, SLOT(seleccionarAlgoritmo(int)));
+
+    QWidget * panel=new QWidget(this);
+    panel->setStyleSheet("background-color:#000000");
+
+    QHBoxLayout *divisionH=new QHBoxLayout();
+    QVBoxLayout *divisionV=new QVBoxLayout();
+
+    QFrame *frame=new QFrame();
+    frame->setLayout(divisionH);
+
+    imgViewer=new VisorWidget();
+    divisionH->addWidget(imgViewer);
+    divisionV->addWidget(frame);
+    divisionV->addWidget(&log);
+    qParametros=new QFrame();
+    qParametros->setFixedWidth(250);
+    qParametros->setStyleSheet("background-color:#F0F0F0");
+    divisionH->addWidget(qParametros);
+    panel->setLayout(divisionV);
+
+    this->setCentralWidget(panel);
+
+
     int separadorAlto=5;
-    log.move(PL,top+PT+HTOTAL+separadorAlto);
-    log.resize(this->width()-(PL<<1),HLOG);
+    //log.move(PL,top+PT+HTOTAL+separadorAlto);
+    log.setFixedHeight(100);
     QPalette p=log.palette();
     p.setColor(QPalette::Background, Qt::black);
     p.setColor(QPalette::Base, Qt::black);
     p.setColor(QPalette::Text, Qt::white);
     log.setPalette(p);
-    log.setParent(this);
-    log.show();
+    //log.setParent(this);
+    //log.show();
 
     resize(width(),top+PT+HTOTAL+(separadorAlto<<1)+HLOG);
     /*std::string rutaDll=vision::configuracion.cogerValor("dlls_temp");
@@ -39,7 +62,9 @@ MainDialog::MainDialog(){
     	//Tenemos la ruta de ficheros, buscamos si hay elementos nuevos.
     	Log::consola(rutaDll);
     }/**/
-
+    if(configuracion.contains("rutaFichero")){
+          loadFile(configuracion.value("rutaFichero").toString());
+       }
 
     //resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
 }
@@ -88,14 +113,17 @@ bool MainDialog::loadFile(const QString &fileName){
 	imagenCV = imread( fileName.toStdString());
 	if ( !imagenCV.data ){
 		QMessageBox mensaje;
-		mensaje.setText("La imagen seleccionada no es v·lida");
+		mensaje.setText("La imagen seleccionada no es v√°lida");
 		mensaje.setIcon(QMessageBox::Warning);
 		mensaje.exec();
 		return false;
 	}
 	cvtColor(imagenCV, imagenCV, COLOR_BGR2RGB);
 	procesado=false;
-	setImage(cv_qimage(imagenCV));
+	imagen=cv_qimage(imagenCV);
+	std::cout<<imagen.rect().height()<<std::endl;
+	imgViewer->setImage(imagen);
+	//setImage(cv_qimage(imagenCV));
 
 	//setWindowFilePath(fileName);
 
@@ -130,7 +158,8 @@ bool MainDialog::loadFile(const QString &fileName){
 	return true;*/
 }
 void MainDialog::setImage(const QImage &newImage){
-	iCVW[0]=newImage.width();
+   return;
+   iCVW[0]=newImage.width();
 	iCVH[0]=newImage.height();
 	int w=iCVW[0];
 	int h=iCVH[0];
@@ -156,6 +185,7 @@ void MainDialog::setImage(const QImage &newImage){
 	this->update();
 }
 void MainDialog::setImagenTratada(const QImage &imagenTemp){
+   //imagenTratada=
 	iCVW[1]=imagenTemp.width();
 	iCVH[1]=imagenTemp.height();
 	int w=iCVW[1];
@@ -169,7 +199,8 @@ void MainDialog::setImagenTratada(const QImage &imagenTemp){
 	}
 
 	//imagenTratada = new QImage();
-	imagenTratada=imagenTemp.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	//imagenTratada=imagenTemp.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	imagenTratada=imagenTemp;
 	setImage(cv_qimage(imagenCV));
 	iW[1]=imagenTratada.width();
 	iH[1]=imagenTratada.height();
@@ -193,9 +224,10 @@ QImage MainDialog::cv_qimageGris(const cv::Mat &cvMat){
 	return imageTemp;
 }
 void MainDialog::paintEvent(QPaintEvent *){
+   return;
 	int top=this->top+PT;
 	int left=PL;
-	int w=WTOTAL+4; //Sumamos 1 de la lÌnea, 1 del margen interno (padding) y eso por cada lado =4
+	int w=WTOTAL+4; //Sumamos 1 de la lÔøΩnea, 1 del margen interno (padding) y eso por cada lado =4
 	int h=HTOTAL+4;
 	QPainter p(this);
 	p.fillRect(PL,top,w,h,Qt::darkGray);
@@ -214,7 +246,13 @@ void MainDialog::paintEvent(QPaintEvent *){
 	//}
 }
 void MainDialog::ejecutarHilo(cv::Mat * img){
-	*img=librerias.librerias[algoritmos->currentIndex()-1]->procesar(imagenCV);
+   boost::shared_ptr<vision::Plugin> p=librerias.librerias[algoritmos->currentIndex()-1];
+   if(p->procesar(imagenCV)){
+      *img=(p->getValor<cv::Mat>("imagen"));
+   }else{
+      *img= NULL;
+   }
+	//*img=;
 }
 void MainDialog::ejecutarMetodo(){
 	if(algoritmos->currentIndex()>0){
@@ -223,7 +261,7 @@ void MainDialog::ejecutarMetodo(){
 			boost::shared_ptr<vision::Plugin> plugin=librerias.librerias[algoritmos->currentIndex()-1];
 			if(plugin){
 				log.clear();
-				QString salida=QStringLiteral("Comenzamos con el mÈtodo ");
+				QString salida=QStringLiteral("Comenzamos con el m√©todo ");
 				salida.append(plugin->getNombre());
 				salida.append("\r\n");
 				log.setText(salida);
@@ -246,13 +284,14 @@ void MainDialog::ejecutarMetodo(){
 				//std::cout<<"Tengo la imagen y la devuelvo"<<imagenCVTemp.rows<<" \r\n";
 				procesado=true;
 				if(imagenCVTemp.channels()>1){
-					setImagenTratada(cv_qimage(imagenCVTemp));
+					imagenTratada=cv_qimage(imagenCVTemp);
 				}else{
-					setImagenTratada(cv_qimageGris(imagenCVTemp));
+				   imagenTratada=cv_qimageGris(imagenCVTemp);
 				}
+				imgViewer->setImage(imagenTratada);
 			}
-		}catch(std::exception){
-			qDebug()<<"Se ha producido un error a la hora de llamar al mÈtodo";
+		}catch(...){ // @suppress("Catching by reference is recommended")
+			qDebug()<<"Se ha producido un error a la hora de llamar al m√©todo.";
 		};
 	}else{
 		qDebug()<<"Seleccionado el 0";
@@ -319,10 +358,96 @@ void MainDialog::ponerToolBar(){
 	//ejecutar->setEnabled(false);
 	connect(ejecutar, SIGNAL (released()),this, SLOT (ejecutarMetodo()));
 	toolBar->addWidget(ejecutar);/**/
-
+	QPushButton *guardar=new QPushButton(QIcon(":/ejecutar.png"),"Guardar");
+	connect(guardar, SIGNAL (released()),this, SLOT (guardarImagen()));
+	toolBar->addWidget(guardar);
 
 
 	addToolBar(toolBar);
 	top+=20;
 
+
+}
+
+void MainDialog::guardarImagen() {
+   QString filename = QFileDialog::getSaveFileName(this, tr("Guardar imagen"),"untitled.png",
+                              tr("Images (*.jpg *.png *.xpm)"));
+   imagenTratada.save(filename);
+}
+
+
+void MainDialog::seleccionarAlgoritmo(int indice){
+   if(qParametros->layout()!=0){
+      QLayout* layout = qParametros->layout ();
+      QLayoutItem *item;
+      while ((item = layout->takeAt(0)) != 0){
+         layout->removeItem (item);
+      }
+      delete layout;
+   }
+   qParametros->update();
+   if(indice!=0){
+      qDebug()<<"Preparamos la zona de configuraci√≥n: "<<QString::number(indice);
+
+      QVBoxLayout *lV=new QVBoxLayout();
+      lV->setAlignment(Qt::AlignTop);
+      qParametros->setLayout(lV);
+      boost::shared_ptr<vision::Plugin> plugin=librerias.librerias[algoritmos->currentIndex()-1];
+      if(plugin){
+         std::vector<std::pair<std::string,vision::Plugin::TIPO>> parametros=plugin->getParametros();
+         //qDebug()<<"hay "<< parametros.size()<<" parametros";
+         for(std::vector<std::pair<std::string,vision::Plugin::TIPO>>::iterator it=parametros.begin();it!=parametros.end();++it){
+            std::string parametro= std::get<0>(*it);
+            switch(((int)std::get<1>(*it))){
+               case vision::Plugin::TIPO::FUNCTION:
+                  {
+                     QPushButton *b=new QPushButton();
+
+                     b->setText(parametro.c_str());
+                     lV->addWidget(b);
+                     connect(b, &QPushButton::clicked, [plugin, parametro](){
+                        //boost::shared_ptr<vision::Plugin> plugin=this->librerias.librerias[algoritmos->currentIndex()-1];
+                        void *f=plugin->getParametro<void*>(parametro);
+                        if(f==0){
+                           qDebug()<<"No hay acci√≥n";
+                        }else{
+                           qDebug()<<"He pulsado el boton de "<<&f;
+                        }
+
+                     });
+
+                  }
+                  break;
+               default:
+                  {
+                     QLabel *l=new QLabel(parametro.c_str());
+                     lV->addWidget(l);
+                     QLineEdit * e=new QLineEdit();
+                     lV->addWidget(e);
+                     //qDebug()<<"Busco parametro "<<parametro.c_str();
+                     std::string s=plugin->getParametro<std::string>(parametro);
+                     //qDebug()<<"encuentro parametro "<<parametro.c_str();
+                     e->setText(s.c_str());
+                     connect(e, &QLineEdit::textChanged, [plugin, parametro](const QString & texto){
+                        plugin->setParametro<std::string>(parametro,std::string(texto.trimmed().toUtf8().constData()));
+                        //qDebug()<<"Nuevo texto "<<texto;
+
+                     });
+                     //((s!=NULL)?"SI":"NULO");
+                     /*if(s!=0){
+                        qDebug()<<"NOes nulo parametro "<<parametro.c_str();
+                        //      qDebug()<<" y vale "<<&s;
+
+                     }else{
+                        qDebug()<<"es nulo parametro "<<parametro.c_str();
+                     }*/
+                  }
+                  break;
+
+            }
+            //qDebug()<<((std::string)(std::get<0>(*it))).c_str()<<" de tipo "<<((int)std::get<1>(*it));
+         }
+      }
+      //panel->cargarImagen(configuracion.value("ultima_imagen_"+QString::number(indice)).toString());
+   }
 }

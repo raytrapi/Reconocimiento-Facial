@@ -29,8 +29,9 @@ endif()
 
 add_definitions(${Qt5Core_DEFINITIONS})
 file(GLOB OTROSCPP src/eigenface/*.cpp src/GUI/*.cpp src/v&j/*.cpp)
-add_executable(deteccionOpenCV src/main.cpp src/img.cpp src/mainwindow.cpp ${OTROSCPP})
+add_executable(deteccionOpenCV src/main.cpp src/img.cpp src/mainwindow.cpp ${OTROSCPP} src/recursos.rc)
 target_link_libraries( deteccionOpenCV ${OpenCV_LIBS} ${Qt5Widgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries( deteccionOpenCV visor utils)
 
 
 set(destino ${CMAKE_CURRENT_BINARY_DIR}/../../bin)

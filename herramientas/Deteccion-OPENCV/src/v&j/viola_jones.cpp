@@ -8,7 +8,7 @@
 #include "viola_jones.h"
 int vision::metodos::Viola_Jones::minHeight=100;
 int vision::metodos::Viola_Jones::minWidth=100;
-std::vector<cv::CascadeClassifier> vision::metodos::Viola_Jones::clasificadores;
+std::vector<std::tuple<cv::CascadeClassifier,const char *, QColor>>  vision::metodos::Viola_Jones::clasificadores;
 namespace vision {
 	namespace metodos {
 		
@@ -30,54 +30,139 @@ namespace vision {
 		Viola_Jones::~Viola_Jones() {
 			// TODO Auto-generated destructor stub
 		}
-		std::vector<std::vector<cv::Rect>> Viola_Jones::procesar(const cv::Mat& img) {
+		std::vector<RestClasificacion> Viola_Jones::procesar(const cv::Mat& img) {
 			int longitud=clasificadores.size();
 			std::vector<int> clasificadoresValidos;
 			for(int i=0;i<clasificadores.size();i++){
 				clasificadoresValidos.push_back(i);
 			}
-			std::vector<std::vector<cv::Rect>> res =procesar(img, clasificadoresValidos);
+			std::vector<RestClasificacion> res =procesar(img, clasificadoresValidos, false);
 			//delete [] clasificadoresValidos;
 			return res;
 		}
-		std::vector<std::vector<cv::Rect>> Viola_Jones::procesar(const cv::Mat& img, const std::vector<int> clasificadoresValidos) {
-			std::vector<std::vector<cv::Rect>> res;
+		std::vector<RestClasificacion> Viola_Jones::procesar(const cv::Mat& img, const std::vector<int> clasificadoresValidos) {
+		   return procesar(img,clasificadoresValidos,false);
+		}
+		std::vector<RestClasificacion> Viola_Jones::procesar(const cv::Mat& img, const std::vector<int> clasificadoresValidos, bool fusionar) {
+			std::vector<RestClasificacion> res;
 			//cv::CascadeClassifier faceCascade;
 			//faceCascade.load("E:/Desarrollo/Vision/build/bin/clasificadores/haarcascade_frontalface_default.xml");
 			//std::vector<cv::Mat *> imagenesResultados;
 			bool estaEjecutando=true;
-			std::cout<<"**************************************"<<std::endl;
-			std::cout<<"    Comenzamos procesado de imagen    "<<std::endl;
-			std::cout<<"**************************************"<<std::endl;
-			std::cout<<"**************************************"<<std::endl<<std::endl;/**/
-			std::clock_t tiempoInicio = std::clock();
-			std::clock_t tiempoParcial=tiempoInicio;
-			std::clock_t tiempoFinal;
+			//std::cout<<"**************************************"<<std::endl;
+			//std::cout<<"    Comenzamos procesado de imagen    "<<std::endl;
+			//std::cout<<"**************************************"<<std::endl;
+			//std::cout<<"**************************************"<<std::endl<<std::endl;/**/
+			//std::clock_t tiempoInicio = std::clock();
+			//std::clock_t tiempoParcial=tiempoInicio;
+			//std::clock_t tiempoFinal;
 
 		    cv::Mat *imagenGris=new cv::Mat(img.size(),img.type());
 		    //imagenesResultados.push_back(imagenGris);
-		    std::cout<<"Convertimos a gris"<<std::endl;
+		    //std::cout<<"Convertimos a gris"<<std::endl;
 		    cv::cvtColor(img, *imagenGris, CV_BGR2GRAY);
 		    cv::equalizeHist(*imagenGris, *imagenGris);
 
-		    tiempoFinal=std::clock();
-		    std::cout<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms"<<std::endl;
+		    //tiempoFinal=std::clock();
+		    //std::cout<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms en convertir en gris"<<std::endl;
 
 			//int minimoW=100;
 			//int minimoH=100;
 			
-			std::cout<<"minWidth: "<<Viola_Jones::minWidth<<" minHeight: "<< Viola_Jones::minHeight<<std::endl;
+			//std::cout<<"Mínimo de deteccion - Ancho: "<<Viola_Jones::minWidth<<" Alto: "<< Viola_Jones::minHeight<<std::endl;
 
-			tiempoParcial=std::clock();
+			//tiempoParcial=std::clock();
 			for(int i=0;i<clasificadoresValidos.size();i++){
-				std::cout<<"Busco caras clasificador "<<(i+1)<<std::endl;
+			   if(Viola_Jones::clasificadores.size()<=clasificadoresValidos[i]){
+			      std::cout<<"El clasificador solicitado no está disponible. Asegurese de haberlo cargado en el sistema."<<std::endl;
+			      throw -1;
+			   }
+				//std::cout<<"Busco objetos clasificador "<<(i+1)<<std::endl;
 				std::vector<cv::Rect> elementosDetectados;
-				Viola_Jones::clasificadores[clasificadoresValidos[i]].detectMultiScale(*imagenGris, elementosDetectados, 1.1, 3,  0|CV_HAAR_SCALE_IMAGE,
+				(std::get<0>(Viola_Jones::clasificadores[clasificadoresValidos[i]])).detectMultiScale(*imagenGris, elementosDetectados, 1.1, 3,  0|CV_HAAR_SCALE_IMAGE,
 			                              	cv::Size(Viola_Jones::minWidth, Viola_Jones::minHeight));
-				tiempoFinal=std::clock();
-				std::cout<<"Se han encontrado "<<elementosDetectados.size()<<" posibles caras"<<std::endl;
-				std::cout<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms"<<std::endl;
-				res.push_back(elementosDetectados);
+				//tiempoFinal=std::clock();
+				//std::cout<<"Se han encontrado "<<elementosDetectados.size()<<" posibles objetos de tipo "<<std::get<1>(Viola_Jones::clasificadores[clasificadoresValidos[i]])<<std::endl;
+				//std::cout<<"Tardo "<<(1000.0 * (tiempoFinal-tiempoParcial) / CLOCKS_PER_SEC)<<"ms"<<std::endl;
+				std::vector<cv::Rect_<double>> elementosDetectadosDouble;
+				for(int j=0;j<elementosDetectados.size();j++){
+				   elementosDetectadosDouble.push_back(cv::Rect_<double>(elementosDetectados[j].x,elementosDetectados[j].y,elementosDetectados[j].width,elementosDetectados[j].height));
+				}
+				if(fusionar && i>0){
+				  res[0].uneZonas(elementosDetectadosDouble);
+				}else{
+				   res.push_back(RestClasificacion(
+				         elementosDetectadosDouble,
+				         std::get<1>(Viola_Jones::clasificadores[clasificadoresValidos[i]]),
+				         std::get<2>(Viola_Jones::clasificadores[clasificadoresValidos[i]]),
+				         true
+				         ));
+				}
+				      /*std::tuple<std::vector<cv::Rect>,const char *, QColor, bool>(elementosDetectados,
+				      std::get<1>(Viola_Jones::clasificadores[clasificadoresValidos[i]]),
+				      std::get<2>(Viola_Jones::clasificadores[clasificadoresValidos[i]]),
+				      true));/**/
+			}/**/
+			if(fusionar){
+			   //Hacemo una fusión de todos los elementos.
+			   std::vector<RestClasificacion> resFusionada;
+			   std::vector<std::pair<cv::Rect_<double>,bool>> elementosDetectados=res[0].clasificados;
+			   std::vector<int> descartadosPorFusion;
+			   for(int i=0;i<elementosDetectados.size();i++){
+
+			      if(std::find(descartadosPorFusion.begin(),descartadosPorFusion.end(),i)==descartadosPorFusion.end()){
+                  for(int j=i+1;j<elementosDetectados.size();j++){
+                     if(std::find(descartadosPorFusion.begin(),descartadosPorFusion.end(),j)==descartadosPorFusion.end()){
+                        cv::Rect_<double> A=(elementosDetectados[i].first);
+                        cv::Rect_<double> B=(elementosDetectados[j].first);
+                        double IoU=vision::Utils::calcularIoU(
+                                A.x,A.y,A.width+A.x,A.height+A.y,
+                                B.x,B.y,B.width+B.x,B.height+B.y
+                                );
+                        //std::cout<<"IOU: "<<IoU<<std::endl;
+                        if(IoU>=0.5){
+                           //Consideramos que son una unión
+                           descartadosPorFusion.push_back(j);
+                           //Modificamos la primera de las apariciones
+                           elementosDetectados[i].first.x=(A.x<B.x)?A.x:B.x;
+                           elementosDetectados[i].first.y=(A.y<B.y)?A.y:B.y;
+                           int size=(A.x+A.width>B.x+B.width)?A.x+A.width:B.x+B.width;
+                           elementosDetectados[i].first.width=size-elementosDetectados[i].first.x;
+                           size=(A.y+A.height>B.y+B.height)?A.y+A.height:B.y+B.height;
+                           elementosDetectados[i].first.height=size-elementosDetectados[i].first.y;/**/
+                           i=-1;
+                           j=elementosDetectados.size();
+                        }else if(IoU>0){
+                           //En el caso de que sea mayor que 0 deberemos comprobar si una esta incluida en la otra
+                           if(A.x<B.x && (A.x+A.width)>(B.x+B.width) &&
+                              A.y<B.y && (A.y+A.height)>(B.y+B.height)){
+                              //B está dentro de A
+                              //Despreciamos B
+                              descartadosPorFusion.push_back(j);
+                              //reiniciamos
+                              i=-1;
+                              j=elementosDetectados.size();
+                           }else if(A.x>B.x && (A.x+A.width)<(B.x+B.width) &&
+                                 A.y>B.y && (A.y+A.height)<(B.y+B.height)){
+                              //A está dentro de B
+                              descartadosPorFusion.push_back(i);
+                              //reiniciamos
+                              i=-1;
+                              j=elementosDetectados.size();
+                           }
+                        }
+                     }
+                  }
+			      }
+			   }
+			   std::vector<std::pair<cv::Rect_<double>,bool>> elementosFinales;
+			   for(int i=0;i<elementosDetectados.size();i++){
+			      if(std::find(descartadosPorFusion.begin(),descartadosPorFusion.end(),i)==descartadosPorFusion.end()){
+			         elementosFinales.push_back(elementosDetectados[i]);
+			      }
+			   }
+			   res[0].clasificados=elementosFinales;
+
 			}/**/
 			
 
@@ -261,11 +346,15 @@ namespace vision {
 			setImage(imageTemp);
 			estaEjecutando=false;/**/
 		}
-		void Viola_Jones::setClasificador(const char * clasificador){
+		void Viola_Jones::setClasificador(const char * clasificador, const char * nombre, QColor color){
 			cv::CascadeClassifier cascadeClasificador;
-			cascadeClasificador.load(clasificador);
-			clasificadores.push_back(cascadeClasificador);
+			if(!cascadeClasificador.load(clasificador)){
+			   std::cout<<"No se ha podido cargar el clasificado ["<<nombre<<"-"<<clasificador<<"]"<<std::endl;
+			   throw -1;
+			}
+			clasificadores.push_back(std::tuple<cv::CascadeClassifier, const char *, QColor>(cascadeClasificador,nombre,color));
 		};
+
 		void Viola_Jones::setDeteccionMinima(int ancho, int alto){
 			minWidth=ancho;
 			minHeight=alto;

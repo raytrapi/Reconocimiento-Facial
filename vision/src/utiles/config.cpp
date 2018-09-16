@@ -25,7 +25,7 @@ namespace ray {
 					ifs.close();
 				}
 			}else{
-				Log::error("No se ha encontrado el fichero de configuración ["+p.string()+"]");
+				Log::error("No se ha encontrado el fichero de configuraciÃ³n ["+p.string()+"]");
 			}
 
 

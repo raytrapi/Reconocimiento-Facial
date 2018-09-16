@@ -22,7 +22,7 @@ namespace ray {
 				char * fichero="config.cfg";
 				struct datos: std::map <std::string, std::string>{
 					/**
-					 * Informa si la clave buscada existe en el fichero de configuración
+					 * Informa si la clave buscada existe en el fichero de configuraciï¿½n
 					 */
 					bool existe(const std::string& s){
 						return count(s)!=0;

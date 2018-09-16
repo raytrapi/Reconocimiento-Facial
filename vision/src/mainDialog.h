@@ -2,32 +2,32 @@
 #define MAINDIALOG_H
 
 #include <iostream>
-#include <QtCore/QStandardPaths>
-#include <QtCore/QDebug>
-#include <QtCore/QSettings>
-#include <QtCore/QDir>
+#include <QStandardPaths>
+#include <QDebug>
+#include <QSettings>
+#include <QDir>
 
-#include <QtWidgets/QDialog>
-#include <QtWidgets/QFrame>
-#include <QtWidgets/QMainWindow>
-#include <QtWidgets/QPushButton>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QFileDialog>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QMenu>
-#include <QtWidgets/QMenuBar>
-#include <QtWidgets/QAction>
-#include <QtWidgets/QStatusBar>
-#include <QtWidgets/QToolBar>
-#include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QComboBox>
-#include <QtWidgets/QTextEdit>
+#include <QDialog>
+#include <QFrame>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QLabel>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QMenu>
+#include <QMenuBar>
+#include <QAction>
+#include <QStatusBar>
+#include <QToolBar>
+#include <QHBoxLayout>
+#include <QComboBox>
+#include <QTextEdit>
 
-#include <QtGui/QImageReader>
-#include <QtGui/QImageWriter>
-#include <QtGui/QGuiApplication>
-#include <QtGui/QScreen>
-#include <QtGui/QPainter>
+#include <QImageReader>
+#include <QImageWriter>
+#include <QGuiApplication>
+#include <QScreen>
+#include <QPainter>
 
 #include <boost/thread.hpp>
 
@@ -39,6 +39,7 @@
 #include "inicializar.h"
 #include "plugin.h"
 #include "dll/librerias.h"
+#include "../../utilidades/controles/visor/src/visorwidget.h"
 
 using namespace cv;
 using namespace ray::utiles;
@@ -65,6 +66,8 @@ class MainDialog : public QMainWindow{
 	public slots:
 	 	 void open();
 	 	 void ejecutarMetodo();
+	 	 void guardarImagen();
+	 	 void seleccionarAlgoritmo(int indice);
 	private:
 	 	void ponerAcciones();
 	 	void ponerToolBar();
@@ -93,7 +96,8 @@ class MainDialog : public QMainWindow{
 		ray::dll::Librerias<vision::Plugin> librerias;
 		QComboBox *algoritmos;
 		QTextEdit log;
-
+		VisorWidget *imgViewer;
+		QFrame *qParametros;
 		//
 
 

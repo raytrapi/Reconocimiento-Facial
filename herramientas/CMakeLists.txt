@@ -12,7 +12,9 @@ ENDMACRO()
 
 
 
-list(APPEND VALIDOS "")
+list(APPEND VALIDOS "hog" )
+list(APPEND VALIDOS "dlib-master" )
+list(APPEND VALIDOS "CLM-framework-master" )
 if(RECORTADOR)
 	list(APPEND VALIDOS "recortador")
 endif()
@@ -21,7 +23,7 @@ if(DETECTOPENCV)
 endif()
 if(YOLO)
 	list(APPEND VALIDOS "yolo")
-endif()
+endif() 
 
 SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
 FOREACH(codigo ${SUBDIRS})

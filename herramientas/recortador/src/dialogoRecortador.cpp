@@ -2,17 +2,90 @@
 
 DialogoRecortador::DialogoRecortador(){
 	QSettings configuracion;
+
+
+
+
+
+
 	menuPrincipal=new QMainWindow(this, Qt::Widget);
 	menuPrincipal->addToolBar(new QToolBar());
+	menuPrincipal->setGeometry(QRect(0,0,WW,21));
+	ponerToolBar();
+	resize(WW,WH);
+	QWidget * panelPrincipal=new QWidget(this);
+	panelPrincipal->setStyleSheet("background-color:#000000");
+
+	QHBoxLayout *horizontal=new QHBoxLayout();
+	imgViewer=new VisorWidget();
+	horizontal->addWidget(imgViewer);
+	panelPrincipal->setLayout(horizontal);
+	horizontal->addWidget(panelPrincipal);
+
+
+	/*principal->setSpacing(6);
+	principal->setContentsMargins(11, 11, 11, 11);*/
+
+   //QFrame *frame=new QFrame();
+   ///PRIMER FRAME
+
+   //frame->setLayout(divisionH);
+   //principal->addWidget(imgViewer);
+   //principal->add(layout);
+   this->setCentralWidget(panelPrincipal);
+
+   QWidget * panel=new QWidget();
+
+   panel->setStyleSheet("background-color:#f0f0f0");
+   panel->setFixedWidth(250);
+   panel->setContentsMargins(2,2,2,2);
+
+
+   //QVBoxLayout *vertical=new QVBoxLayout();
+   QFormLayout *form=new QFormLayout();
+   QLabel *l=new QLabel();
+   l->setText("Origen:");
+   form->setWidget(1, QFormLayout::LabelRole,l);
+   horizontal=new QHBoxLayout();
+   horizontal->addWidget(&tbOrigen);
+   QPushButton *boton=new QPushButton();
+   horizontal->addWidget(boton);
+   boton->setFlat(true);
+   boton->setText("...");
+   boton->setFixedWidth(30);
+   form->setLayout(1, QFormLayout::FieldRole,horizontal);
+   panel->setLayout(form);
+   //panel->layout()->addWidget(&tbOrigen);
+   tbOrigen.setReadOnly(true);
+
+
+   l=new QLabel();
+   l->setText("Destino:");
+   form->setWidget(1, QFormLayout::LabelRole,l);
+   horizontal=new QHBoxLayout();
+   horizontal->addWidget(&tbOrigen);
+   boton=new QPushButton();
+   horizontal->addWidget(boton);
+   boton->setFlat(true);
+   boton->setText("...");
+   boton->setFixedWidth(30);
+   form->setLayout(1, QFormLayout::FieldRole,horizontal);
+   panel->setLayout(form);
+   tbOrigen.setReadOnly(true);
+
+
+
+   panelPrincipal->layout()->addWidget(panel);
+
 	anchoImagen=WW-PADDING[1]-PADDING[3];
 	altoImagen=WH-PADDING[0]-PADDING[2];
-	resize(WW,WH);
+
 	if(configuracion.contains("rutaCarpeta")){
 		cargarCarpeta(configuracion.value("rutaCarpeta").toString());
 	}
 	 //setFixedSize(WW,WH);
     ponerAcciones();
-    ponerToolBar();
+
     /*librerias.leer((char *)vision::configuracion.cogerValor("dlls_temp").c_str());
     //librerias.ok();
     for(int i=0;i<librerias.numLibrerias;i++){
@@ -92,7 +165,6 @@ void DialogoRecortador::abrirCarpeta(){
     		QDir directorio(dialog.selectedFiles().first());
 			configuracion.setValue("rutaCarpeta",directorio.absolutePath());
 			configuracion.sync();
-
     	}
     }
 }
@@ -106,6 +178,7 @@ bool DialogoRecortador::cargarCarpeta(const QString &carpeta){
 	QStringList nameFilters;
 	nameFilters << "*.jpg" << "*.png";
 	ficheros = dir.entryList(nameFilters, QDir::Files|QDir::Readable, QDir::Name);
+	tbOrigen.setText(carpeta);
 	//qDebug()<<ficheros.size()<<"\r\n";
 	posicion = 0;
 	cogerImagen(posicion);
@@ -115,7 +188,7 @@ bool DialogoRecortador::cargarCarpeta(const QString &carpeta){
 	/*imagenCV = imread( carpeta.toStdString());
 	if ( !imagenCV.data ){
 		QMessageBox mensaje;
-		mensaje.setText("La imagen seleccionada no es válida");
+		mensaje.setText("La imagen seleccionada no es vï¿½lida");
 		mensaje.setIcon(QMessageBox::Warning);
 		mensaje.exec();
 		return false;
@@ -171,17 +244,17 @@ QImage DialogoRecortador::cargarImagen(const QString &fichero){
 	int w=anchoImagen-PADDING[3]-PADDING[1];
 	int h=altoImagen-PADDING[0]-PADDING[2];
 	if(imagen.size().width()>w){
-		qDebug()<<w<<"/"<<imagen.size().width();
+		//qDebug()<<w<<"/"<<imagen.size().width();
 		escalaTemporal=(qreal)w/(qreal)imagen.size().width();
-		qDebug()<<escalaTemporal;
+		//qDebug()<<escalaTemporal;
 	}
 	if(imagen.size().height()>h){
-		qDebug()<<h<<"/"<<imagen.size().height();
+		//qDebug()<<h<<"/"<<imagen.size().height();
 		qreal escalaTemporal2=(qreal)h/(qreal)imagen.size().height();
 		if(escalaTemporal2<escalaTemporal){
 			escalaTemporal=escalaTemporal2;
 		}
-		qDebug()<<escalaTemporal2;
+		//qDebug()<<escalaTemporal2;
 	}
 	escala=escalaTemporal;
 	/*const QSize maximumSize(2000, 2000); // Reduce in case someone has large photo images.
@@ -203,19 +276,45 @@ void DialogoRecortador::siguienteImagen(){
 	    update();
 }
 void DialogoRecortador::cogerImagen(int indice){
-	if (ficheros.isEmpty())
-		return;
+   if (ficheros.isEmpty())
+      return;
 
-	if (indice < 0 || indice >= ficheros.size()) {
-        return;
-    }
+   if (indice < 0 || indice >= ficheros.size()) {
+      return;
+   }
 	posicion = indice;
-    imagen = cargarImagen(ruta+QLatin1String("/")+ficheros.at(posicion));
+	QString nombreFichero(ruta+QLatin1String("/")+ficheros.at(posicion));
+   imagen = cargarImagen(nombreFichero);
+   imgViewer->setImage(imagen);
+   //Intentamos coger su recorte
+   if(!imagen.isNull()){
+      QFileInfo fichero(nombreFichero);
+      QString nombreSelector(fichero.path()+"/"+fichero.completeBaseName()+".txt");
+    	//selecciones= vision::recortador::Selector::load((char *)nombreSelector.toLatin1().data());
+    	imgViewer->setRegiones(vision::recortador::Selector::load((char *)nombreSelector.toLatin1().data()));
+   }
+
 	update();
 }
 
+void DialogoRecortador::recortar() {
+   if(rutaSalida==NULL){
+      QFileDialog dialog(this, tr("Seleccionar carpeta destino"));
+      if (dialog.exec() == QDialog::Accepted){
+         QDir directorio(dialog.selectedFiles().first());
+         rutaSalida=directorio.absolutePath();
+      }else{
+         return;
+      }
+   }
+   //Guardamos el fichero recortado
+
+   posicion++;
+   cogerImagen(posicion);
+}
 
 void DialogoRecortador::paintEvent(QPaintEvent *){
+   return ;
 	int top=this->top+PADDING[0];
 	int left=PADDING[3];
 	QPainter p(this);
@@ -246,18 +345,38 @@ void DialogoRecortador::paintEvent(QPaintEvent *){
 
 //	}else{
 	p.drawImage(left, top, imagen);
+
+
+	//	Pintamos los selectores
+	/*if(!selecciones.empty()){
+	   for(std::vector<vision::recortador::Seleccion>::iterator is=selecciones.begin();is!=selecciones.end();++is){
+	      vision::recortador::Seleccion s=*is;
+	      qDebug()<<s.x;
+	      qDebug()<<s.w;
+	      qDebug()<<imagen.width();
+	      qDebug()<<escala;
+	      p.setPen(Qt::blue);
+	      p.drawRect(
+	            ((s.x-s.w/2)*imagen.width())+left,
+	            ((s.y-s.h/2)*imagen.height())+top,
+	            ((s.w)*imagen.width()),
+	            ((s.h)*imagen.height())
+	         );
+	   }
+	}/**/
+
 	//p.drawImage(0, 0, imagen);
-	qDebug()<<escala;
-	qDebug()<<this->escala;
+	//qDebug()<<escala;
+	//qDebug()<<this->escala;
 
 
 	//}
 }
-void DialogoRecortador::mousePressEvent(QMouseEvent *event){
+/*void DialogoRecortador::mousePressEvent(QMouseEvent *event){
 	qDebug()<<"Presiono";
 }
 void DialogoRecortador::mouseMoveEvent(QMouseEvent *event){
-	qDebug()<<"Muevo";
+	//qDebug()<<"Muevo";
 }
 void DialogoRecortador::mouseReleaseEvent(QMouseEvent *event){
 	qDebug()<<"Suelto";
@@ -271,7 +390,7 @@ void DialogoRecortador::wheelEvent(QWheelEvent *event){
 	zoom+=(0.01)*((event->delta()>>3)/15);
 	update();
 }
-
+*/
 void DialogoRecortador::ponerAcciones(){
     /*QMenu *fileMenu = menuBar()->addMenu(tr("&Abrir"));
 
@@ -288,22 +407,26 @@ void DialogoRecortador::ponerAcciones(){
 void DialogoRecortador::ponerToolBar(){
 
 	//QMainWindow * mainWindow = new QMainWindow();
-	QToolBar * toolBar = new QToolBar(tr("ejecucion"));
-	toolBar->setAllowedAreas(Qt::TopToolBarArea);
-	toolBar->setMovable(false);
+   QPixmap seleccionarCarpeta("folder.png");
+   QPixmap icoRecortar("recortar.png");
 
-	/*algoritmos=new QComboBox();
+   QToolBar * toolBar = new QToolBar(tr("ejecucion"));
+   toolBar->setAllowedAreas(Qt::TopToolBarArea);
+   toolBar->setMovable(false);
+
+   /*algoritmos=new QComboBox();
 	algoritmos->addItem("__ALGORITMOS__");
 	toolBar->addWidget(algoritmos);/**/
+   QPushButton *abrir=new QPushButton(QIcon(seleccionarCarpeta),"Abrir");
+   connect(abrir, SIGNAL (released()),this, SLOT (abrirCarpeta()));
+   toolBar->addWidget(abrir);/**/
+   QPushButton *recortar=new QPushButton(QIcon(icoRecortar),"Recortar");
+   connect(recortar, SIGNAL (released()),this, SLOT (recortar()));
+   toolBar->addWidget(recortar);
 
-	QPushButton *abrir=new QPushButton(QIcon(":/img/folder.png"),"Abrir");
-	//ejecutar->setEnabled(false);
-	connect(abrir, SIGNAL (released()),this, SLOT (abrirCarpeta()));
-	toolBar->addWidget(abrir);/**/
 
 
-
-	addToolBar(toolBar);
-	top+=25;//toolBar->heightMM();
+   addToolBar(toolBar);
+   top+=25;//toolBar->heightMM();
 
 }

@@ -15,15 +15,42 @@ namespace ray {
 		inline void * Librerias<T>::cargarDLL(const char * fichero){
 			#ifdef WIN32
 				HINSTANCE hDLL = LoadLibrary(fichero);
+				if(hDLL==NULL){
+				   LPVOID lpMsgBuf;
+				   LPVOID lpDisplayBuf;
+				   DWORD dw = GetLastError();
+
+				   FormatMessage(
+				         FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				         FORMAT_MESSAGE_FROM_SYSTEM |
+				         FORMAT_MESSAGE_IGNORE_INSERTS,
+				         NULL,
+				         dw,
+				         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				         (LPTSTR) &lpMsgBuf,
+				         0, NULL );
+
+				   lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+				         (lstrlen((LPCTSTR)lpMsgBuf)  + 40) * sizeof(TCHAR));
+				   StringCchPrintf((LPTSTR)lpDisplayBuf,
+				         LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+				         TEXT("(err %d) %s"),
+				         dw, lpMsgBuf);
+               std::cerr << "Error al cargar librerÃ­a [LoadLibrary: "<<(LPCTSTR)lpDisplayBuf<<"]"<<std::endl;
+				   //MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+
+				   LocalFree(lpMsgBuf);
+				   LocalFree(lpDisplayBuf);
+
+				}
 				return hDLL;
 			#elif __linux__
 				void * manejador;
 				//std::cout<<"intento\r\n";
 				manejador=dlopen(fichero, RTLD_LAZY);
-				if (!manejador) {
-					std::cerr << "No ha podido cargar la librería: " << dlerror() << '\n';
-
-					}
+				if (manejador==NULL) {
+					std::cerr << "No ha podido cargar la librerÃ­a [dlopen: err " << dlerror() << "]"<<std::endl;
+            }
 				return manejador;
 			#endif
 			return NULL;
@@ -60,12 +87,12 @@ namespace ray {
 		}
 
 		/**
-		 * Localizamos las librerías
+		 * Localizamos las librerï¿½as
 		 */
 		template<class T>
 		inline void Librerias<T>::leer(const char * ruta) {
 				//char * clase="una";
-			ray::utiles::Log::consola("Comenzamos la comprobación");
+			ray::utiles::Log::consola("Comenzamos la comprobaciÃ³n");
 			boost::filesystem::path p(ruta);
 			if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)){
 				//Cogemos los ficheros
@@ -102,7 +129,7 @@ namespace ray {
 									std::cout<<"Fallo\r\n";
 								}
 							}else{
-								std::cout<<"Fracaso cargar libreria\r\n";
+								std::cout<<"No se ha podido cargar librerÃ­a ["<<(char *)f.path().generic_string().c_str()<<"]\r\n";
 							}
 						}catch (int e) {
 							ray::utiles::Log::consola(e);

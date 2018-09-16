@@ -9,6 +9,7 @@
 #define SRC_DLL_LIBRERIAS_H_
 #ifdef _WIN32
 	#include <windows.h>
+   #include <strsafe.h>
 #elif __linux__
 	#include <stdlib.h>
 	#include <dlfcn.h>
@@ -32,8 +33,7 @@ namespace ray {
 			#endif
 			private:
 				 std::map <std::string, std::map<std::string,boost::shared_ptr<T>>> libreriasCargadas;
-				 void * cargarDLL(const char * fichero);
-				 T * cargarClase(void * &hDLL, const char * clase);
+
 			public:
 				 Librerias(){numLibrerias=0;};
 				 ~Librerias();
@@ -41,6 +41,8 @@ namespace ray {
 				 int numLibrerias;
 				 void ok();
 				 void leer(const char *);
+				 void * cargarDLL(const char * fichero);
+				 T * cargarClase(void * &hDLL, const char * clase);
 				 /*template<class k>
 				 void cargar(const boost::filesystem::path &ruta,boost::shared_ptr<k> clase,bool recargar=false);/**/
 		};
