@@ -6,6 +6,7 @@
 
 list *read_data_cfg(char *filename)
 {
+	//fprintf("Abro el fichero %s\n",filename);
     FILE *file = fopen(filename, "r");
     if(file == 0) file_error(filename);
     char *line;
@@ -14,6 +15,7 @@ list *read_data_cfg(char *filename)
     while((line=fgetl(file)) != 0){
         ++ nu;
         strip(line);
+
         switch(line[0]){
             case '\0':
             case '#':

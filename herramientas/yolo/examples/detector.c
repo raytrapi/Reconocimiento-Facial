@@ -5,11 +5,15 @@ static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,2
 
 void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
 {
+	//printf("Me pongo a entrenar\n");
+	//fprintf("Me pongo a entrenar %s\n", datacfg);
     list *options = read_data_cfg(datacfg);
+
     char *train_images = option_find_str(options, "train", "data/train.list");
     char *backup_directory = option_find_str(options, "backup", "/backup/");
 
     srand(time(0));
+
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     float avg_loss = -1;
@@ -65,6 +69,10 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             printf("Resizing\n");
             int dim = (rand() % 10 + 10) * 32;
             if (get_current_batch(net)+200 > net->max_batches) dim = 608;
+            if(dim>500){
+            	//dim=512;
+            	dim=480;
+            }
             //int dim = (rand() % 4 + 16) * 32;
             printf("%d\n", dim);
             args.w = dim;
@@ -176,7 +184,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
                    if(ngpus != 1) sync_nets(nets, ngpus, 0);
                 #endif
                    char buff[256];
-                   sprintf(buff, "%s/%s_%d_10.weights", backup_directory, base, i);
+                   //sprintf(buff, "%s/%s_%d_10.weights", backup_directory, base, i);
+                   sprintf(buff, "%s/%s_%d_10.weights", backup_directory, base, 10);
                    save_weights(net, buff);
                 }
          //FIN SUB
